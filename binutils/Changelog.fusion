@@ -1,0 +1,6 @@
+* config.sub: add fusion-core support line 263
+* configure.ac: "--"
+* configure: rebuilt
+
+* configure.ac: build bfd
+* configure: rebuilt

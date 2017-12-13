@@ -1,0 +1,9 @@
+* targets.c: add fusion-core supoprt
+* Makefile.am : "--"
+* Makefile.in : rebuilt
+* cpu-fusion.c, elf32-fusion.c: new files
+* archures.c: add fusion-core support
+* configure.in: "--"
+* configure: rebuilt
+* config.bfd: add fusion-core support
+* bfd-in2.h: rebuilt
