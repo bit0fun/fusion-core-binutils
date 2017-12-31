@@ -51,6 +51,7 @@
 #define MASK_DSEL_LI		0x001e0000
 #define MASK_IMM_LI			0x0001ffff
 #define MASK_FUNCT_S		0x0f000000
+#define MASK_IMM_S		0x00e007ff
 #define MASK_IMM_HI_S		0x00e00000
 #define MASK_IMM_LO_S		0x000007ff
 #define MASK_IMM_J			0x03e0ffff

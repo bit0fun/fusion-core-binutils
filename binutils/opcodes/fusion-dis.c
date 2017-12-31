@@ -65,7 +65,7 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 
 	int status;
 	stream = info->stream;
-	const fusion_insn_t *insn;
+	const fusion_opc_info_t *insn;
 	unsigned short insn_word;
 	fpr = info->fprintf_func;
 
@@ -135,7 +135,7 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 	
 	} else if( IS_SYS_TYPE(insn_word) ) {
 			insn = &fusion_insn_SYS[ GET_FUNCT_SYS(insn_word) ];
-		switch(insn->insn_frmt) { //determine what operands, uses immediate	
+		switch(insn->frmt) { //determine what operands, uses immediate	
 			case USE_NONE: //no operands
 				fpr(stream, "%s", insn->name);
 				break;

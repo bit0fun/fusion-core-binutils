@@ -52,15 +52,15 @@
 
 
 //extern const fusion_inst_t fusion_inst[128];
-extern const fusion_insn_t fusion_insn_R[NUM_INSN_R];
-extern const fusion_insn_t fusion_insn_I[NUM_INSN_I];
-extern const fusion_insn_t fusion_insn_L[NUM_INSN_L];
-extern const fusion_insn_t fusion_insn_LI[NUM_INSN_LI];
-extern const fusion_insn_t fusion_insn_S[NUM_INSN_S];
-extern const fusion_insn_t fusion_insn_J[NUM_INSN_J];
-extern const fusion_insn_t fusion_insn_JL[NUM_INSN_JL];
-extern const fusion_insn_t fusion_insn_B[NUM_INSN_B];
-extern const fusion_insn_t fusion_insn_SYS[NUM_INSN_SYS];
+extern const fusion_opc_info_t fusion_insn_R[NUM_INSN_R];
+extern const fusion_opc_info_t fusion_insn_I[NUM_INSN_I];
+extern const fusion_opc_info_t fusion_insn_L[NUM_INSN_L];
+extern const fusion_opc_info_t fusion_insn_LI[NUM_INSN_LI];
+extern const fusion_opc_info_t fusion_insn_S[NUM_INSN_S];
+extern const fusion_opc_info_t fusion_insn_J[NUM_INSN_J];
+extern const fusion_opc_info_t fusion_insn_JL[NUM_INSN_JL];
+extern const fusion_opc_info_t fusion_insn_B[NUM_INSN_B];
+extern const fusion_opc_info_t fusion_insn_SYS[NUM_INSN_SYS];
 
 
 
@@ -110,7 +110,7 @@ enum append_method {
 /*instructio information, format, operands, fix requirements*/
 struct fusion_cl_insn {
 	/*struct for */
-	const struct fusion_opcode *insn_op;
+	const struct fusion_opc_info_t *insn_op;
 	unsigned long insn_word;
 
 
@@ -148,7 +148,7 @@ void md_operand (expressionS *op __attribute__((unused))){
 
 void md_begin (void) {
 	int count;
-	const fusion_insn_t *opcode;
+	const fusion_opc_info_t *opcode;
 	opcode_hash_control = hash_new();
 
 	for (count = 0, opcode = fusion_insn_R; count++< NUM_INSN_R; opcode++){
@@ -302,7 +302,7 @@ void md_assemble(char *str){
 	char *op_start;
 	char *op_end;
 
-	fusion_insn_t *opcode;
+	fusion_opc_info_t *opcode;
 	char *output;
 	int index = 0;
 	char pend;
@@ -322,7 +322,7 @@ void md_assemble(char *str){
 	if(nlen == 0)
 		as_bad (_("can't find opcode "));
 
-	opcode = (fusion_insn_t *) hash_find(opcode_hash_control, op_start);
+	opcode = (fusion_opc_info_t *) hash_find(opcode_hash_control, op_start);
 	*op_end = pend;
 
 	if(opcode == NULL){
@@ -331,7 +331,7 @@ void md_assemble(char *str){
 	}
 
 	output = frag_more(1);
-	output[index++] = opcode->opcode;
+	output[index++] = opcode->opc;
 
 	while(ISSPACE(*op_end)){
 		op_end++;

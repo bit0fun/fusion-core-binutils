@@ -31,3 +31,4 @@
 #define MAKE_SYS_TYPE(RD, RSA, FUNCT, IMM) \
 		(RD << 21) | (RSA << 16) | (FUNCT << 8) | (IMM) | ( OPC_SYS_TYPE << 26)
 
+#endif
