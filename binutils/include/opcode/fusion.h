@@ -141,7 +141,7 @@ typedef struct fusion_opc_info_t {
 	unsigned args;			//which operands for instruction
 	unsigned frmt;			//instruction format type
 	unsigned cpid;			//ID for coprocessor; 0 is main
-	unsigned imm_mask;		//mask for immediate value; 0 if no immediate
+	uint32_t imm_mask;		//mask for generating immediate bit position; 0 if no immediate
 	unsigned opc;			//the actual opcode
 
 } fusion_opc_info_t;
