@@ -132,7 +132,7 @@
 #define FRMT_SYS			7
 
 /*Defines for Co-Processor ID*/
-#define CPID_MAIN_CORE		0
+#define CPID_MAIN		0
 
 
 typedef struct fusion_opc_info_t {
