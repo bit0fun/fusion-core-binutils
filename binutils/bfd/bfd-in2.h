@@ -3193,6 +3193,10 @@ to compensate for the borrow when the low bits are added.  */
   BFD_RELOC_FRV_TLSOFF_RELAX,
   BFD_RELOC_FRV_TLSMOFF,
 
+  /* Fusion Core Relocations*/
+  BFD_RELOC_FUSION_14_PCREL, //For branches
+  BFD_RELOC_FUSION_21_PCREL, //For jumps
+
 
 /* This is a 24bit GOT-relative reloc for the mn10300.  */
   BFD_RELOC_MN10300_GOTOFF24,

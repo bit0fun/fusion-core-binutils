@@ -3182,6 +3182,10 @@ static const char *const bfd_reloc_code_real_names[] = { "@@uninitialized@@",
   "BFD_RELOC_WASM32_CODE_POINTER",
   "BFD_RELOC_WASM32_INDEX",
   "BFD_RELOC_WASM32_PLT_SIG",
+  
+  "BFD_RELOC_FUSION_14_PCREL",
+  "BFD_RELOC_FUSION_21_PCREL",
+
  "@@overflow: BFD_RELOC_UNUSED@@",
 };
 #endif
