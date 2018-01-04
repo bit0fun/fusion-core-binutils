@@ -1,7 +1,7 @@
 #ifndef FUSION_ENCODING_H
 #define	FUSION_ENCODING_H
 
-
+#include "fusion.h"
 /*Macros for generating binary code of instruction*/
 
 #define MAKE_R_TYPE(RD, RSA, RSB, SHFT, ALUOP) \
@@ -48,16 +48,16 @@
 
 /* Macros for Splitting up Immediate Values*/
 
-#define SPLIT_S_IMM_HI(IMM) 	( IMM & SPLIT_S_IMM_HI ) << SHFT_IMM_HI_S
-#define SPLIT_S_IMM_LO(IMM) 	( IMM & SPLIT_S_IMM_LO )
-#define SPLIT_J_IMM_HI(IMM) 	( IMM & SPLIT_J_IMM_HI ) << SHFT_IMM_HI_J
-#define SPLIT_J_IMM_LO(IMM) 	( IMM & SPLIT_J_IMM_LO )
-#define SPLIT_B_IMM_HI(IMM) 	( IMM & SPLIT_B_IMM_HI ) << SHFT_IMM_HI_B
-#define SPLIT_B_IMM_LO(IMM) 	( IMM & SPLIT_B_IMM_LO ) << SHFT_IMM_LO_B
+#define GET_SPLIT_S_IMM_HI(IMM) 	( IMM & SPLIT_S_IMM_HI ) << SHFT_IMM_HI_S
+#define GET_SPLIT_S_IMM_LO(IMM) 	( IMM & SPLIT_S_IMM_LO )
+#define GET_SPLIT_J_IMM_HI(IMM) 	( IMM & SPLIT_J_IMM_HI ) << SHFT_IMM_HI_J
+#define GET_SPLIT_J_IMM_LO(IMM) 	( IMM & SPLIT_J_IMM_LO )
+#define GET_SPLIT_B_IMM_HI(IMM) 	( IMM & SPLIT_B_IMM_HI ) << SHFT_IMM_HI_B
+#define GET_SPLIT_B_IMM_LO(IMM) 	( IMM & SPLIT_B_IMM_LO ) << SHFT_IMM_LO_B
 
-#define GET_S_IMM(IMM)		( SPLIT_S_IMM_HI(IMM) | SPLIT_S_IMM_LO(IMM) )
-#define GET_J_IMM(IMM)		( SPLIT_J_IMM_HI(IMM) | SPLIT_J_IMM_LO(IMM) )
-#define GET_B_IMM(IMM)		( SPLIT_B_IMM_HI(IMM) | SPLIT_B_IMM_LO(IMM) )
+#define GET_S_IMM(IMM)		( GET_SPLIT_S_IMM_HI(IMM) | GET_SPLIT_S_IMM_LO(IMM) )
+#define GET_J_IMM(IMM)		( GET_SPLIT_J_IMM_HI(IMM) | GET_SPLIT_J_IMM_LO(IMM) )
+#define GET_B_IMM(IMM)		( GET_SPLIT_B_IMM_HI(IMM) | GET_SPLIT_B_IMM_LO(IMM) )
 
 
 #endif

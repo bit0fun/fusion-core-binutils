@@ -17,6 +17,8 @@
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA
    02110-1301, USA.  */
 
+#ifndef FUSION_OPC_H
+#define FUSION_OPC_H
 
 /* Operand Type Definitions*/
 #define USE_NONE			0	//Doesn't have use, just for system instructions
@@ -29,7 +31,10 @@
 #define USE_RDA				7	//Uses Rd, RSa
 
 /*Defines for number of current implemented instructions*/
-#define NUM_INSN_R			16 // 16 total instructions, only 12 at the moment
+#define NUM_INSN_R			17 // 16 total instructions,only 12 at
+					   //the moment; include nop to 16 
+					   //other instructions
+					   
 #define NUM_INSN_I			16 // 16 total instructions, only 12 a the moment
 #define NUM_INSN_L			4
 #define NUM_INSN_LI			32 //32 total instructions, only 6 at the moment
@@ -193,3 +198,5 @@ extern const fusion_opc_info_t fusion_insn_J[NUM_INSN_J];
 extern const fusion_opc_info_t fusion_insn_JL[NUM_INSN_JL];
 extern const fusion_opc_info_t fusion_insn_B[NUM_INSN_B];
 extern const fusion_opc_info_t fusion_insn_SYS[NUM_INSN_SYS]; 
+
+#endif

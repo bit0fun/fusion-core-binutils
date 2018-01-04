@@ -38,8 +38,8 @@ static void *stream;
 
 /* Register definitions */
 
-extern static const char* fusion_gpreg_name[32]; 
-extern static const char* fusion_gpreg_num[32];
+extern const char* fusion_gpreg_name[32]; 
+extern const char* fusion_gpreg_num[32];
 extern const char* fusion_spreg_name[13];
 
 int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
