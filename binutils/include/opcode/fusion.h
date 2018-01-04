@@ -38,6 +38,9 @@
 #define NUM_INSN_JL			2
 #define NUM_INSN_B			4
 #define NUM_INSN_SYS		256 //256 total instructions, only 7 at the moment
+#define NUM_INSN		( NUM_INSN_R + NUM_INSN_I + NUM_INSN_L\
+				+ NUM_INSN_LI + NUM_INSN_S + NUM_INSN_J\
+				+ NUM_INSN_JL + NUM_INSN_SYS )
 
 /**** Bit field Masks ****/
 #define MASK_RD				0x03e00000
@@ -63,6 +66,21 @@
 #define MASK_FUNCT_B		0x00000003
 #define MASK_FUNCT_SYS		0x0000ff00
 #define MASK_IMM_SYS		0x000000ff
+
+/* Bit field split mask for immediates*/
+#define SPLIT_S_IMM_LO		0x000007ff //lower byte
+#define SPLIT_S_IMM_HI		0x00003800 
+#define SPLIT_J_IMM_LO		0x0000ffff //lower 16 bits
+#define SPLIT_J_IMM_HI		0x003f0000
+#define SPLIT_B_IMM_LO		0x000001ff //lower byte
+#define SPLIT_B_IMM_HI		0x00003e00 
+
+
+/* Bit shift amounts*/
+#define SHFT_IMM_HI_S		10 //11 -> 21
+#define SHFT_IMM_HI_J		5 //16 ->21
+#define SHFT_IMM_HI_B		12 //9->21
+#define SHFT_IMM_LO_B		2 //0 -> 2
 
 /* Bit Field Macros */
 #define GET_RD(i)			(MASK_RD & i) >> 21
@@ -135,21 +153,37 @@
 /*Defines for Co-Processor ID*/
 #define CPID_MAIN		0
 
+/*Defines for Opcodes*/
+#define OPC_INT			0x01
+#define OPC_IMM			0x03
+#define OPC_LD			0x12
+#define OPC_LI			0x02
+#define OPC_ST			0x3a
+#define OPC_JMP			0x06
+#define OPC_JLNK		0x07
+#define OPC_BRANCH		0x05
+#define OPC_SYS			0x08
+
+
+/*Instruction bits*/
+typedef uint32_t insn_t;
+
 
 typedef struct fusion_opc_info_t {
 	const char* name;		//instruction name
-	unsigned index;			//how instruction is determined
+	insn_t index;			//how instruction is determined
 	unsigned args;			//which operands for instruction
 	unsigned frmt;			//instruction format type
 	unsigned cpid;			//ID for coprocessor; 0 is main
-	uint32_t imm_mask;		//mask for generating immediate bit position; 0 if no immediate
-	unsigned opc;			//the actual opcode
+	insn_t imm_mask;		//mask for generating immediate bit position; 0 if no immediate
+	insn_t opc;			//the actual opcode
 
 } fusion_opc_info_t;
 
 
 
 
+extern const fusion_opc_info_t fusion_insn_all[NUM_INSN];
 extern const fusion_opc_info_t fusion_insn_R[NUM_INSN_R]; 
 extern const fusion_opc_info_t fusion_insn_I[NUM_INSN_I];
 extern const fusion_opc_info_t fusion_insn_L[NUM_INSN_L];

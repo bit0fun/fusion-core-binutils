@@ -38,28 +38,9 @@ static void *stream;
 
 /* Register definitions */
 
-static const char* fusion_gpreg_name[32] ={
-"zero",	"sp", "fp", "gp", "ra", "arg0", "arg1", "arg2", "arg3",
-"rval0", "rval1", "gr0", "gr1", "gr2", "gr3", "gr4", "gr5", 
-"gr6", "gr7", "gr8", "gr9", "gr10", "tmp0", "tmp1", "tmp2","tmp3",
-"tmp4", "tmp5", "tmp6", "tmp7", "hi0", "low0"
-
-};
-/*
-static const char* fusion_gpreg_num[32] ={
-"R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8",
-"R9", "R10", "R11", "R12", "R13", "R14", "R15", "R16",
-"R17", "R18", "R19", "R20", "R21", "R22", "R23", "R24",
-"R25", "R26", "R27", "R28", "R29", "R30", "R31"
-
-};
-*/
-//more will be added in the future
-static const char* fusion_spreg_name[13] ={
-	"CPUREV", "CPNUM", "CPO0", "n/a", "CPO0", "n/a", "CPO1",
-	"n/a", "CPO3", "n/a", "STAT", "n/a", "OPCAR"
-};
-
+extern static const char* fusion_gpreg_name[32]; 
+extern static const char* fusion_gpreg_num[32];
+extern const char* fusion_spreg_name[13];
 
 int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 
