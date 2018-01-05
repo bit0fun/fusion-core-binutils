@@ -439,10 +439,10 @@ const fusion_opc_info_t fusion_insn_all[NUM_INSN] = {
 {"compi",	0x0c,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
 /*		Load Instructions									*/
 /* Name  	Funct	args		frmt		cpid		imm_mask		opc	*/
-{"lw",		0x0, 	USE_RDAI,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		0x12},
-{"lh",		0x1,	USE_RDAI,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		0x12},
-{"lth",		0x2,	USE_RDAI,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		0x12},
-{"lb",		0x3,	USE_RDAI,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		0x12},
+{"lw",		0x0, 	USE_RDAI_O,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		0x12},
+{"lh",		0x1,	USE_RDAI_O,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		0x12},
+{"lth",		0x2,	USE_RDAI_O,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		0x12},
+{"lb",		0x3,	USE_RDAI_O,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		0x12},
 /*		Load Immediate Instructions								*/
 /* Name  	DSEL	args		frmt		cpid		imm_mask		opc	*/
 {"li",		0x0,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,		0x02},
@@ -459,18 +459,18 @@ const fusion_opc_info_t fusion_insn_all[NUM_INSN] = {
 {"lungi",	0xd,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,		0x02},
 /*		Store Instructions									*/
 /* Name  	Funct	args		frmt		cpid		imm_mask		opc	*/
-{"sw",		0x0, 	USE_RABI,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		0x3a},
-{"sh",		0x1,	USE_RABI,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		0x3a},
-{"sth",		0x2,	USE_RABI,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		0x3a},
-{"sb",		0x3,	USE_RABI,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		0x3a},
+{"sw",		0x0, 	USE_RABI_O,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		0x3a},
+{"sh",		0x1,	USE_RABI_O,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		0x3a},
+{"sth",		0x2,	USE_RABI_O,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		0x3a},
+{"sb",		0x3,	USE_RABI_O,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		0x3a},
 /*		Jump Instructions									*/
 /* Name  	USESREG	args		frmt		cpid		imm_mask		opc	*/
-{"j",		0x0,	USE_RAI,	FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x06},
-{"jr",		0x1,	USE_RAI,	FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x06},
+{"j",		0x0,	USE_I,		FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x06},
+{"jr",		0x1,	USE_RAI_O,	FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x06},
 /*		Jump Link Instructions									*/
 /* Name  	USESREG	args		frmt		cpid		imm_mask		opc	*/
-{"jal",		0x0,	USE_RAI,	FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x07},
-{"jrl",		0x1,	USE_RAI,	FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x07},
+{"jal",		0x0,	USE_I,		FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x07},
+{"jrl",		0x1,	USE_RAI_O,	FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x07},
 /*		Branch Instructions									*/
 /* Name  	Funct	args		frmt		cpid		imm_mask		opc	*/
 {"beq",		0x0,	USE_RABI,	FRMT_B,		CPID_MAIN,	MASK_IMM_B,		0x05},

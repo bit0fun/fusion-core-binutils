@@ -1,7 +1,11 @@
 #!/bin/bash
 
-rm -rf build
-mkdir build
+if [ !  -d "./build" ]; then
+	mkdir build
+fi
+
 cd build
 ../configure --target=fusion-elf --prefix=/home/bit0fun/binutils-test
+make clean
 make -j4
+make install

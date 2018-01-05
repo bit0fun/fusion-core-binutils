@@ -92,7 +92,7 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 		insn = &fusion_insn_S[ GET_FUNCT_S(insn_word) ];
 		fpr(stream, "%s\t$%s, 0x%x($%s)", insn->name, \
 						fusion_gpreg_name[ GET_RSB(insn_word) ],\
-						GET_IMM_L(insn_word),\
+						GET_IMM_S(insn_word),\
 						fusion_gpreg_name[ GET_RSA(insn_word) ] );
 	
 	} else if((opc == 0x06) || (opc == 0x07)){// else if( IS_J_TYPE(insn_word) ) {

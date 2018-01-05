@@ -36,10 +36,15 @@ int parse_rda(  int* rd, int* rsa, char* op_end);
 int parse_rab(  int* rsa, int* rsb, char* op_end);
 int parse_imm(  int* imm, char* op_end);
 
-int parse_rdai( int* rd, int* rsa, int* imm,  char* op_end);
 int parse_rdi(int* rd, int* imm, char* op_end);
+int parse_rdai( int* rd, int* rsa, int* imm,  char* op_end);
 int parse_rai(int *rsa, int* imm, char* op_end);
 int parse_rabi(int* rsa, int* rsb, int* imm, char* op_end);
+
+int parse_rdai_offset( int* rd, int* rsa, int* imm,  char* op_end);
+int parse_rai_offset(int *rsa, int* imm, char* op_end);
+int parse_rabi_offset(int* rsa, int* rsb, int* imm, char* op_end);
+
 
 bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t* insn, insn_t* insn_bin);
 
@@ -508,7 +513,7 @@ static int parse_register_operand(char** ptr){
 	     && (s[2] == 'e')
 	     && (s[3] == 'r')
 		 && (s[4] == 'o') ){
-			if( !((s[5] == ' ') || (s[5] == '\t') || (s[5] == ',') )){
+			if( !((s[5] == ' ') || (s[5] == '\t') || (s[5] == ',') || (s[5] == ')') )){
 				as_bad(_("not a real register: %s"), s);	
 			}
 		*ptr += 5; 
@@ -823,6 +828,112 @@ int parse_rabi(int* rsa, int* rsb, int* imm, char* op_end){
 		as_warn(_("ignored rest of line: %s"), op_end);
 	return 0;
 }
+
+int parse_rdai_offset( int* rd, int* rsa, int* imm,  char* op_end){
+
+	//skipping spaces
+	while( (*op_end == ' ') || (*op_end == '\t') )
+	       op_end++;	
+
+	*rd = parse_register_operand(&op_end);
+	if(*op_end != ','){
+		as_warn(_("expecting comma deliminated operands"));
+	}
+	op_end++;
+
+	//get rid of spaces and tabs
+	while( (*op_end == ' ') || (*op_end == '\t'))
+		op_end++;
+
+	parse_imm(imm, op_end);
+	while( (*op_end != '(')){
+		if(*op_end == '\0'){
+			as_bad(_("expecting `(' before end: %s"), op_end);
+			return -1;
+		}
+		op_end++;
+	}
+	op_end++;
+	*rsa = parse_register_operand(&op_end);
+	op_end++;
+
+	//SKIP_SPACE_TABS(op_end);
+
+	//if(*op_end != ')'){
+	//	as_bad(_("expecting `)' after register: %s"), op_end);
+	//}
+	while( (*op_end == ' ') || (*op_end == '\t') || (*op_end == ')'))
+		op_end++;
+
+	if(*op_end != '\0')
+		as_warn(_("ignored rest of line: %s"), op_end);
+	return 0;
+} 
+
+int parse_rai_offset(int *rsa, int* imm, char* op_end){
+	//get rid of spaces and tabs
+	while( (*op_end == ' ') || (*op_end == '\t'))
+		op_end++;
+
+	parse_imm(imm, op_end);
+	while( (*op_end != '(')){
+		if(*op_end == '\0'){
+			as_bad(_("xpecting `(' before end"));
+			return -1;
+		}
+		op_end++;
+	}
+	op_end++;
+	*rsa = parse_register_operand(&op_end);
+	op_end++;
+//	if(*op_end != ')'){
+//		as_bad(_("expecting `)' after register: %s"), op_end);
+//	}
+	while( (*op_end == ' ') || (*op_end == '\t') || (*op_end == ')'))
+		op_end++;
+
+	if(*op_end != '\0')
+		as_warn(_("ignored rest of line: %s"), op_end);
+	return 0;
+}
+int parse_rabi_offset(int* rsa, int* rsb, int* imm, char* op_end){
+		//skipping spaces
+	while( (*op_end == ' ') || (*op_end == '\t') )
+	       op_end++;	
+
+	*rsa = parse_register_operand(&op_end);
+	if(*op_end != ','){
+		as_warn(_("expecting comma deliminated operands"));
+	}
+	op_end++;
+
+	//get rid of spaces and tabs
+	while( (*op_end == ' ') || (*op_end == '\t'))
+		op_end++;
+
+	parse_imm(imm, op_end);
+	while( (*op_end != '(')){
+		if(*op_end == '\0'){
+			as_bad(_("expecting `(' before end"));
+			return -1;
+		}
+		op_end++;
+	}
+	op_end++;
+	*rsb = parse_register_operand(&op_end);
+	op_end++;
+//	if(*op_end != ')'){
+//		as_bad(_("expecting `)' after register: %s"), op_end);
+//	}
+	while( (*op_end == ' ') || (*op_end == '\t') || (*op_end == ')'))
+		op_end++;
+
+	if(*op_end != '\0')
+		as_warn(_("ignored rest of line: %s"), op_end);
+	return 0;	
+}
+
+
 /* output instruction
  * ip: instruction information
  * address_expr: operand of instruciton to be used with reloc_type
@@ -879,7 +990,7 @@ bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t* insn, insn_t* insn_b
 	
 	args = insn->args; //operands for instruction	
 
-	if( (args > 8) ){
+	if( (args > MAX_USE_OP) ){
 		as_bad(_("Incorrect arguments, what did you do? insn: %s"), op_start);
 		return FALSE;
 	}
@@ -935,6 +1046,15 @@ bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t* insn, insn_t* insn_b
 					break;
 				case USE_RABI:
 					parse_rabi( &RSa, &RSb, &imm, op_end);
+					break;
+				case USE_RDAI_O:
+					parse_rdai_offset( &Rd, &RSa, &imm, op_end);
+					break;
+				case USE_RAI_O:
+					parse_rai_offset( &RSa, &imm, op_end);
+					break;
+				case USE_RABI_O:
+					parse_rabi_offset( &RSa, &RSb, &imm, op_end);
 					break;
 				case USE_I:
 					parse_imm( &imm, op_end);

@@ -32,6 +32,13 @@
 #define USE_I				6	//Uses Immediate only
 #define USE_RDA				7	//Uses Rd, RSa
 #define USE_RAB				8	//Uses RSa, RSb
+#define USE_RABI_O		9	//Uses RSa, RSb, immediate, with rsb
+								//as offset value
+#define USE_RDAI_O		10  //Same as USE_RDAI, but with RSa
+								//as offset value
+#define USE_RAI_O		11  //Same as USE_RAI, but with RSa
+								//as offset value							//
+#define MAX_USE_OP		12
 
 /*Defines for number of current implemented instructions*/
 #define NUM_INSN_R			17 // 16 total instructions,only 12 at
@@ -62,7 +69,7 @@
 #define MASK_DSEL_LI		0x001e0000
 #define MASK_IMM_LI			0x0001ffff
 #define MASK_FUNCT_S		0x0f000000
-#define MASK_IMM_S		0x00e007ff
+#define MASK_IMM_S			0x00e007ff
 #define MASK_IMM_HI_S		0x00e00000
 #define MASK_IMM_LO_S		0x000007ff
 #define MASK_IMM_J			0x03e0ffff
@@ -103,7 +110,7 @@
 #define GET_IMM_LI(i)		(MASK_IMM_LI & i)
 #define GET_FUNCT_S(i)		( (MASK_FUNCT_S & i) >> 24 ) & 0x3
 #define GET_IMM_S(i)		(MASK_IMM_LO_S & i) | ( (MASK_IMM_HI_S & i) >> 10)
-#define GET_IMM_J(i)		(MASK_IMM_LO_J & i) | ( (MASK_IMM_HI_J) >> 5)	
+#define GET_IMM_J(i)		(MASK_IMM_LO_J & i) | ( (MASK_IMM_HI_J & i) >> 5)	
 #define GET_IMM_B(i)		( (MASK_IMM_LO_B & i) >> 2 ) | ( (MASK_IMM_HI_B & i) >> 10 ) 
 #define GET_FUNCT_B(i)		(MASK_FUNCT_B & i)
 #define GET_FUNCT_SYS(i)	(MASK_FUNCT_SYS & i) >> 8
