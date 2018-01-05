@@ -35,6 +35,12 @@ int parse_rdab( int* rd, int* rsa, int* rsb, char* op_end);
 int parse_rda(  int* rd, int* rsa, char* op_end);
 int parse_rab(  int* rsa, int* rsb, char* op_end);
 int parse_imm(  int* imm, char* op_end);
+
+int parse_rdai( int* rd, int* rsa, int* imm,  char* op_end);
+int parse_rdi(int* rd, int* imm, char* op_end);
+int parse_rai(int *rsa, int* imm, char* op_end);
+int parse_rabi(int* rsa, int* rsb, int* imm, char* op_end);
+
 bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t* insn, insn_t* insn_bin);
 
 //extern const fusion_opc_info_t fusion_insn_R[NUM_INSN_R];
@@ -490,9 +496,9 @@ static char* parse_expt_save_ilp(char *s, expressionS* op){
 static int parse_register_operand(char** ptr){
 	 int reg;
 	 char* s = *ptr;
-//	SKIP_SPACE_TABS(s);	
+	SKIP_SPACE_TABS(s);	
 	 if(*s != '$') { //denote register with $ 
-		as_bad(_("expecting register"));
+		as_bad(_("expecting register, missing '$': %s"), s);
 		ignore_rest_of_line();
 		return -1;
 	 }
@@ -502,18 +508,33 @@ static int parse_register_operand(char** ptr){
 	     && (s[2] == 'e')
 	     && (s[3] == 'r')
 		 && (s[4] == 'o') ){
+			if( !((s[5] == ' ') || (s[5] == '\t') || (s[5] == ',') )){
+				as_bad(_("not a real register: %s"), s);	
+			}
 		*ptr += 5; 
 		return 0; //register 0
 	 } else if( (s[1] == 's') && (s[2] == 'p')) {
+			if( !((s[3] == ' ') || (s[3] == '\t') || (s[3] == ',')) ){
+				as_bad(_("not a real register: %s"), s);	
+			}
 			*ptr += 3;
 			return 1;
 	 } else if( (s[1] == 'f') && (s[2] == 'p')){
+			if( !((s[3] == ' ') || (s[3] == '\t') || (s[3] == ',')) ){
+				as_bad(_("not a real register: %s"), s);	
+			}
 	 		*ptr += 3;
 			return 2;
 	 } else if( (s[1] == 'g') && (s[2] == 'p')) {
+			if(! ( (s[3] == ' ') || (s[3] == '\t') || (s[3] = ',')) ){
+				as_bad(_("not a real register: %s"), s);	
+			}
 			*ptr += 3;
 			return 3;
 	 } else if( (s[1] == 'r') && (s[2] == 'a')) {
+			if( !((s[3] == ' ') || (s[3] == '\t') || (s[3] == ',')) ){
+				as_bad(_("not a real register: %s"), s);	
+			}
 			*ptr += 3;
 			return 4;
 	 } else if( (s[1] == 'a') && (s[2] == 'r') && (s[3] == 'g')) {
@@ -531,6 +552,9 @@ static int parse_register_operand(char** ptr){
 			  &&(s[2] == 'v')
 			  &&(s[3] == 'a')
 			  &&(s[4] == 'l')){
+			if( !((s[6] == ' ') || (s[6] == '\t') || (s[6] == ',')) ){
+				as_bad(_("not a real register: %s"), s);	
+			}
 	 	reg = s[5] - '0';
 		if( (reg < 0) || (reg >1) ){
 			as_bad(_("illegal return value regsiter"));
@@ -567,6 +591,9 @@ static int parse_register_operand(char** ptr){
 	 
 	 } else if ( (s[1] == 't') && (s[2] == 'm') 
 				&& (s[3] == 'p')  ){
+			if( !((s[4] == ' ') || (s[4] == '\t') || (s[4] == ',')) ){
+				as_bad(_("not a real register: %s"), s);	
+			}
 			reg = s[4] - '0'; 
 		if( (reg < 0) || (reg > 8) ){
 			as_bad(_("illegal general use register"));	
@@ -578,10 +605,16 @@ static int parse_register_operand(char** ptr){
 		}
 	 
 	 } else if( (s[1] == 'h') && (s[2] == 'i') && (s[3] == '0')){
+			if( !((s[4] == ' ') || (s[4] == '\t') || (s[4] == ',')) ){
+				as_bad(_("not a real register: %s"), s);	
+			}
 	 	*ptr += 3;
 		return 30; //HI0 is R30
 	 } else if( (s[1] == 'l') && (s[2] == 'o') && (s[3] == 'w')
 					 && (s[4] == '0')){
+			if( !((s[5] == ' ') || (s[5] == '\t') || (s[5] == ',')) ){
+				as_bad(_("not a real register: %s"), s);	
+			}
 	 	*ptr += 5;
 		return 31; //LOW0 is R31
 	 } else {
@@ -625,7 +658,7 @@ int parse_rdab( int* rd, int* rsa, int* rsb, char* op_end){
 	while( (*op_end == ' ') || (*op_end == '\t'))
 		op_end++;
 	if(*op_end != '\0')
-		as_warn(_("ignored rest of line"));
+		as_warn(_("ignored rest of line: %s"), op_end);
 
 	return 0;
 } 
@@ -651,7 +684,7 @@ int parse_rda( int* rd, int* rsa, char* op_end){
 	while( (*op_end == ' ') || (*op_end == '\t'))
 		op_end++;
 	if(*op_end != '\0')
-		as_warn(_("ignored rest of line"));
+		as_warn(_("ignored rest of line: %s"), op_end);
 
 	return 0;
 } 
@@ -673,11 +706,14 @@ int parse_rab( int* rsa, int* rsb, char* op_end){
 		op_end++;
 
 	*rsb = parse_register_operand(&op_end);
-	
+	if(*op_end != ','){
+		as_warn(_("expecting comma deliminated operands"));
+	}
+	op_end++;
 	while( (*op_end == ' ') || (*op_end == '\t'))
 		op_end++;
 	if(*op_end != '\0')
-		as_warn(_("ignored rest of line"));
+		as_warn(_("ignored rest of line: %s"), op_end);
 
 	return 0;
 } 
@@ -694,8 +730,99 @@ int parse_imm( int* imm, char* op_end){
 	return 0;
 } 
 
+int parse_rdai( int* rd, int* rsa, int* imm,  char* op_end){
 
+	//skipping spaces
+	while( (*op_end == ' ') || (*op_end == '\t') )
+	       op_end++;	
 
+	*rd = parse_register_operand(&op_end);
+	if(*op_end != ','){
+		as_warn(_("expecting comma deliminated operands"));
+	}
+	op_end++;
+
+	//get rid of spaces and tabs
+	while( (*op_end == ' ') || (*op_end == '\t'))
+		op_end++;
+
+	*rsa = parse_register_operand(&op_end);
+	if(*op_end != ','){
+		as_warn(_("expecting comma deliminated operands"));
+	}
+	op_end++;
+	while( (*op_end == ' ') || (*op_end == '\t'))
+		op_end++;
+
+	parse_imm(imm, op_end);
+	if(*op_end != '\0')
+		as_warn(_("ignored rest of line: %s"), op_end);
+	return 0;
+} 
+int parse_rdi(int* rd, int* imm, char* op_end){
+	//skipping spaces
+	while( (*op_end == ' ') || (*op_end == '\t') )
+	       op_end++;	
+
+	*rd = parse_register_operand(&op_end);
+	if(*op_end != ','){
+		as_warn(_("expecting comma deliminated registers"));
+	}
+	op_end++;
+
+	//get rid of spaces and tabs
+	while( (*op_end == ' ') || (*op_end == '\t'))
+		op_end++;
+	parse_imm(imm, op_end);
+	if(*op_end != '\0')
+		as_warn(_("ignored rest of line: %s"), op_end);
+	return 0;
+
+}
+int parse_rai(int *rsa, int* imm, char* op_end){
+	//skipping spaces
+	while( (*op_end == ' ') || (*op_end == '\t') )
+	       op_end++;	
+
+	*rsa = parse_register_operand(&op_end);
+	if(*op_end != ','){
+		as_warn(_("expecting comma deliminated registers"));
+	}
+	op_end++;
+
+	//get rid of spaces and tabs
+	while( (*op_end == ' ') || (*op_end == '\t'))
+		op_end++;
+	parse_imm(imm, op_end);
+	if(*op_end != '\0')
+		as_warn(_("ignored rest of line: %s"), op_end);
+	return 0;
+}
+int parse_rabi(int* rsa, int* rsb, int* imm, char* op_end){
+	//skipping spaces
+	while( (*op_end == ' ') || (*op_end == '\t') )
+	       op_end++;	
+
+	*rsa = parse_register_operand(&op_end);
+	if(*op_end != ','){
+		as_warn(_("expecting comma deliminated registers"));
+	}
+	op_end++;
+
+	*rsb = parse_register_operand(&op_end);
+	if(*op_end != ','){
+		as_warn(_("expecting comma deliminated registers"));
+	}
+	op_end++;
+
+	//get rid of spaces and tabs
+	while( (*op_end == ' ') || (*op_end == '\t'))
+		op_end++;
+	parse_imm(imm, op_end);
+	if(*op_end != '\0')
+		as_warn(_("ignored rest of line: %s"), op_end);
+	return 0;
+}
 /* output instruction
  * ip: instruction information
  * address_expr: operand of instruciton to be used with reloc_type
@@ -744,7 +871,7 @@ bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t* insn, insn_t* insn_b
 	unsigned args;
 	char* op_start = str;
 	char* op_end = str;
-
+	
 	if( (cpid_value) > 0){
 		as_bad(_("Unknown co-processor instruction: %s"), op_start);
 		return FALSE;
@@ -761,7 +888,7 @@ bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t* insn, insn_t* insn_b
 	int Rd = 0;  //Destination Register
 	int RSa = 0; //Source A register
 	int RSb = 0; //Source B register
-	//int imm = 0; //Immediate value
+	int imm = 0; //Immediate value
 
 	insn_t imm_mask = insn->imm_mask;	
 	if(imm_mask == MASK_NO_IMM){
@@ -771,7 +898,7 @@ bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t* insn, insn_t* insn_b
 				while( (*op_end == ' ') || (*op_end == '\t'))
 					op_end++;
 				if(*op_end != '\0')
-					as_warn(_("ignored rest of line"));
+					as_warn(_("ignored rest of line: %s"), op_end);
 				break;
 	
 			case USE_RDAB:
@@ -785,43 +912,43 @@ bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t* insn, insn_t* insn_b
 			case USE_RAB:
 				parse_rab( &RSa, &RSb, op_end);
 				break;
+			default:
+				break;
 
 		
-		}
-
-	if( (Rd == -1) || (RSa == -1) || (RSb == -1) ){
+		} 
+			if( (Rd == -1) || (RSa == -1) || (RSb == -1) ){
 				as_bad(_("unknown register used %s"), op_start);	
 				return FALSE;
-			}
-		/*
-			} else { //instructions use immediate values
-				switch(args){
-					case USE_RDAI:
-						parse_rdai(str, &Rd, &RSa, imm, op_end);
-						break;	
-					case USE_RDI:
-						parse_rdi(str, &Rd, &imm, op_end);
-						break;
-					case USE_RAI:
-						parse_rai(str, &RSa, &imm, op_end);
-						break;
-					case USE_RI:
-						parse_imm(str, &imm, op_end);
-						while( (*op_end == ' ') || (*op_end == '\t'))
-							op_end++;
-						if(*op_end != '\0')
-							as_warn(_("ignored rest of line"));
-						break;	
+				}
 
-
-				
-				}	
-		*/	
-			}
+	} else { //instructions use immediate values
+			switch(args){
+				case USE_RDAI:
+					parse_rdai( &Rd, &RSa, &imm, op_end);
+					break;	
+				case USE_RDI:
+					parse_rdi( &Rd, &imm, op_end);
+					break;
+				case USE_RAI:
+					parse_rai( &RSa, &imm, op_end);
+					break;
+				case USE_RABI:
+					parse_rabi( &RSa, &RSb, &imm, op_end);
+					break;
+				case USE_I:
+					parse_imm( &imm, op_end);
+					while( (*op_end == ' ') || (*op_end == '\t'))
+						op_end++;
+					if(*op_end != '\0')
+						as_warn(_("ignored rest of line: %s"), op_end);
+					break;	
+			}	
+	}
 
 
 			/*Temporary immediate value, until relocatations are finalized*/
-			int imm_tmp = 0xdeadbeef;
+//			int imm_tmp = 0;//0xdeadbeef;
 
 			/*Determine which instruction kind*/
 			switch(opc){
@@ -831,56 +958,50 @@ bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t* insn, insn_t* insn_b
 					break;
 				/*Immediate Instructions*/
 				case OPC_IMM:
-					as_warn(_("immediate instructions not  \
-						implemented yet: %s"), op_start);
-					*insn_bin = MAKE_I_TYPE(Rd, RSa, imm_tmp , insn->index);
+					as_warn(_("immediate instructions not implemented yet: %s"), op_start);
+					*insn_bin = MAKE_I_TYPE(Rd, RSa, imm , insn->index);
 					break;
 				/*Load Instructions*/
 				case OPC_LD:
-					as_warn(_("immediate instructions not \
-						implemented yet: %s"), op_start);
-					*insn_bin = MAKE_L_TYPE(Rd, RSa, insn->index, imm_tmp);
+					as_warn(_("immediate instructions not implemented yet: %s"), op_start);
+					*insn_bin = MAKE_L_TYPE(Rd, RSa, insn->index, imm);
 					break;
 				/*Store Instructions*/	
 				case OPC_ST:
-					as_warn(_("immediate instructions not \
-						implemented yet: %s"), op_start);
-					*insn_bin = MAKE_S_TYPE(insn->index, RSa, RSb, imm_tmp);
+					as_warn(_("immediate instructions not implemented yet: %s"), op_start);
+					*insn_bin = MAKE_S_TYPE(insn->index, RSa, RSb, imm);
 					break;	
 				/*Load Immeidate Instructions*/
 				case OPC_LI:
-					as_warn(_("immediate instructions not \
-						implemented yet: %s"), op_start);
-					*insn_bin = MAKE_LI_TYPE(Rd, insn->index, imm_tmp);
+					as_warn(_("immediate instructions not implemented yet: %s"), op_start);
+					*insn_bin = MAKE_LI_TYPE(Rd, insn->index, imm);
 					break;
 				/*Jump Instruction*/
 				case OPC_JMP:
-					as_warn(_("immediate instructions not \
-						implemented yet: %s"), op_start);		
-					*insn_bin = MAKE_J_TYPE(RSa, imm_tmp);
+					as_warn(_("immediate instructions not implemented yet: %s"), op_start);		
+					*insn_bin = MAKE_J_TYPE(RSa, imm);
+					as_warn(_("making jmp insn: %x"), *insn_bin);
 					break;
 				/*Jump Link Instruction*/
 				case OPC_JLNK:
-					as_warn(_("immediate instructions not \
-						implemented yet: %s"), op_start);
-					*insn_bin = MAKE_JL_TYPE(RSa, imm_tmp);
-				break;
+					as_warn(_("immediate instructions not implemented yet: %s"), op_start);
+					*insn_bin = MAKE_JL_TYPE(RSa, imm);
+					as_warn(_("making jlnk insn: %x"), *insn_bin);
+					break;
 				/*Branch Instructions*/
 				case OPC_BRANCH:
-					as_warn(_("immediate instructions not \
-						implemented yet: %s"), op_start);
-					*insn_bin = MAKE_B_TYPE(RSa, RSb, imm_tmp, insn->index);
+					as_warn(_("immediate instructions not implemented yet: %s"), op_start);
+					*insn_bin = MAKE_B_TYPE(RSa, RSb, imm, insn->index);
 					break;
 				/*System Instrucitons*/
 				case OPC_SYS:
-					as_warn(_("immediate instructions not \
-						implemented yet: %s"), op_start);
-					*insn_bin = MAKE_SYS_TYPE(Rd, RSa, insn->index, imm_tmp);
+					as_warn(_("immediate instructions not implemented yet: %s"), op_start);
+					*insn_bin = MAKE_SYS_TYPE(Rd, RSa, insn->index, imm);
 					break;
-				/*Unknown Instructions*/
 				case 0x00:
 					*insn_bin = 0x00000000; //since nop
 					break;
+				/*Unknown Instructions*/
 				default:
 					as_bad(_("Unknown opcode, \
 						how did you manage that?: %s"), op_start);
@@ -900,7 +1021,6 @@ bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t* insn, insn_t* insn_b
 
 
 		void md_assemble(char* str){
-			as_warn("Not real warning: in md_assemble");
 			char* op_start;
 			char* op_end;
 
@@ -927,14 +1047,14 @@ bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t* insn, insn_t* insn_b
 				as_bad (_("couldn't find instruction"));
 			}
 			insn = (fusion_opc_info_t *)hash_find(op_hash_ctrl, op_start);
+			/*fix hash if incorrect instruction found; happens for jumps?*/
+ 
 			*op_end = pend;
-			
 			if(insn == NULL){
 				as_bad(_("Unknown instruction: %s"), op_start);
 				return;
 			}
 			p = frag_more(4);
-	as_warn(_("Not real warning: opstart=%s, opend=%s"),op_start, op_end);
 	bfd_boolean assemble_success = assemble_insn_bin(op_end, insn, &iword);
 	/*Make sure assembly is done properly*/	
 	if( !assemble_success ){

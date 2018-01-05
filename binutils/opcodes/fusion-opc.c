@@ -125,12 +125,12 @@ const fusion_opc_info_t fusion_insn_S[NUM_INSN_S] = {
 };
 const fusion_opc_info_t fusion_insn_J[NUM_INSN_J] = {
 /* Name  	USESREG	args		frmt		cpid		imm_mask		opc	*/
-{"j",		0x0,	USE_RAI,	FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x06},
+{"j",		0x0,	USE_I,		FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x06},
 {"jr",		0x1,	USE_RAI,	FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x06}
 };
 const fusion_opc_info_t fusion_insn_JL[NUM_INSN_JL] = {
 /* Name  	USESREG	args		frmt		cpid		imm_mask		opc	*/
-{"jal",		0x0,	USE_RAI,	FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x07},
+{"jal",		0x0,	USE_I,		FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x07},
 {"jrl",		0x1,	USE_RAI,	FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x07}
 };
 const fusion_opc_info_t fusion_insn_B[NUM_INSN_B] = {

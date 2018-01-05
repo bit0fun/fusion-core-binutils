@@ -59,38 +59,38 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 //	fpr (stream, "%s", fusion_inst[opcode].name);
 	insn_word = (insn_t) bfd_getb32(buf_insn);
 	opc = GET_OPC(insn_word);
-	printf("opc: %x\n", opc );
+//	printf("opc: %x\n", opc );
 	//Figure out format
 	
 	if( IS_R_TYPE(insn_word) ) {	//need to get alu op to determine instruction
 		insn = &fusion_insn_R[ GET_ALUOP(insn_word) ]; //which instruction to choose
-		fpr(stream, "%s\t%s, %s, %s", insn->name,\
+		fpr(stream, "%s\t$%s, $%s, $%s", insn->name,\
 						fusion_gpreg_name[ GET_RD(insn_word) ],\
 						fusion_gpreg_name[ GET_RSA(insn_word) ], \
 						fusion_gpreg_name[GET_RSB(insn_word)] );
 	} else if( IS_I_TYPE(insn_word) ) { //need to get alu op to determine instruction
 		insn = &fusion_insn_I[ GET_ALUOP(insn_word) ];
-		fpr(stream, "%s\t%s, %s, 0x%x", insn->name,\
+		fpr(stream, "%s\t$%s, $%s, 0x%x", insn->name,\
 						fusion_gpreg_name[ GET_RD(insn_word) ],\
 						fusion_gpreg_name[ GET_RSA(insn_word) ],\
 						GET_IMM_I(insn_word) );
 				
 	} else if( IS_L_TYPE(insn_word) ) {
 		insn = &fusion_insn_L[ GET_FUNCT_L(insn_word) ];
-		fpr(stream, "%s\t%s, 0x%x(%s)", insn->name, \
+		fpr(stream, "%s\t$%s, 0x%x(%s)", insn->name, \
 						fusion_gpreg_name[ GET_RD(insn_word) ],\
 						GET_IMM_L(insn_word),\
 						fusion_gpreg_name[ GET_RSA(insn_word) ] );
 	
 	} else if( IS_LI_TYPE(insn_word) ) {
 		insn = &fusion_insn_LI[ GET_DSEL_LI(insn_word) ];
-		fpr(stream, "%s\t%s, 0x%x", insn->name, \
+		fpr(stream, "%s\t$%s, 0x%x", insn->name, \
 						fusion_gpreg_name[ GET_RD(insn_word) ],\
 						GET_IMM_L(insn_word) );
 	
 	} else if( IS_S_TYPE(insn_word) ) {
 		insn = &fusion_insn_S[ GET_FUNCT_S(insn_word) ];
-		fpr(stream, "%s\t%s, 0x%x(%s)", insn->name, \
+		fpr(stream, "%s\t$%s, 0x%x($%s)", insn->name, \
 						fusion_gpreg_name[ GET_RSB(insn_word) ],\
 						GET_IMM_L(insn_word),\
 						fusion_gpreg_name[ GET_RSA(insn_word) ] );
@@ -105,10 +105,10 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 				fpr(stream, "nri"); //not a real jump
 		} else { //using register, no possible error here
 			if ( IS_JLNK_INSN( insn_word ) ) //jump register and link
-				fpr(stream, "jrl\t0x%x(%s)",  GET_IMM_J(insn_word), \
+				fpr(stream, "jrl\t0x%x($%s)",  GET_IMM_J(insn_word), \
 								fusion_gpreg_name[ GET_RSA(insn_word) ] );
 			else if (IS_JMP_INSN( insn_word ) ) //jump register
-				fpr(stream, "jr\t0%x(%s)", GET_IMM_J(insn_word), \
+				fpr(stream, "jr\t0%x($%s)", GET_IMM_J(insn_word), \
 								fusion_gpreg_name[ GET_RSA(insn_word) ] );
 			else
 				fpr(stream, "nri"); //not a real jump
@@ -116,14 +116,14 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 	
 	} else if( IS_B_TYPE(insn_word) ) {
 			insn = &fusion_insn_B[ GET_FUNCT_B(insn_word) ];
-			fpr(stream, "%s\t%s,%s,0x%x", insn->name,\
+			fpr(stream, "%s\t$%s,$%s,0x%x", insn->name,\
 							fusion_gpreg_name[ GET_RSA(insn_word) ],\
 							fusion_gpreg_name[ GET_RSB(insn_word) ],\
 							GET_IMM_B(insn_word));
 	
 	} else if( IS_SYS_TYPE(insn_word) ) {
 			insn = &fusion_insn_SYS[ GET_FUNCT_SYS(insn_word) ];
-		switch(insn->frmt) { //determine what operands, uses immediate	
+		switch(insn->args) { //determine what operands, uses immediate	
 			case USE_NONE: //no operands
 				fpr(stream, "%s", insn->name);
 				break;
@@ -131,7 +131,7 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 				fpr(stream, "%s\t0x%x", insn->name, GET_IMM_SYS(insn_word));
 				break;
 			case USE_RAI: //RSa and immediate
-				fpr(stream, "%s\t%s,0x%x", insn->name,\
+				fpr(stream, "%s\t$%s,0x%x", insn->name,\
 								fusion_gpreg_name[ GET_RSA(insn_word) ],\
 								GET_IMM_SYS(insn_word));
 				break;
@@ -139,12 +139,12 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 
 				//check if instruction is accessing system registers
 				if( GET_FUNCT_SYS(insn_word) == 0x02 )	{
-					fpr(stream, "%s\t%s,%s", insn->name,\
+					fpr(stream, "%s\t$%s,$%s", insn->name,\
 							fusion_spreg_name[ GET_RD(insn_word) ],\
 							fusion_gpreg_name[ GET_RSA(insn_word)] );
 					break;
 				} else if(GET_FUNCT_SYS(insn_word) == 0x03 ) {
-					fpr(stream, "%s\t%s,%s", insn->name,\
+					fpr(stream, "%s\t$%s,$%s", insn->name,\
 							fusion_gpreg_name[ GET_RD(insn_word) ],\
 							fusion_spreg_name[ GET_RSA(insn_word)] );
 					break;
@@ -153,12 +153,12 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 					break;
 				}
 			case USE_RDI: //Rd and immediate
-					fpr(stream, "%s\t%s,0x%x", insn->name,\
+					fpr(stream, "%s\t$%s,0x%x", insn->name,\
 								fusion_gpreg_name[ GET_RD(insn_word) ],\
 								 GET_IMM_SYS(insn_word)  );
 				break;			
 			case USE_RDAI: //Rd, RSa, and immediate
-					fpr(stream, "%s\t%s, %s, 0x%x", insn->name,\
+					fpr(stream, "%s\t$%s, $%s, 0x%x", insn->name,\
 								fusion_gpreg_name[ GET_RD(insn_word) ],\
 								fusion_gpreg_name[ GET_RSA(insn_word) ],\
 								GET_IMM_SYS(insn_word) );
