@@ -20,6 +20,8 @@
 #ifndef FUSION_OPC_H
 #define FUSION_OPC_H
 
+#include <stdint.h>
+
 /* Operand Type Definitions*/
 #define USE_NONE			0	//Doesn't have use, just for system instructions
 #define USE_RDAB			1	//Uses Rd, RSa, RSb
@@ -29,6 +31,7 @@
 #define USE_RAI				5	//Uses RSa, Immediate
 #define USE_I				6	//Uses Immediate only
 #define USE_RDA				7	//Uses Rd, RSa
+#define USE_RAB				8	//Uses RSa, RSb
 
 /*Defines for number of current implemented instructions*/
 #define NUM_INSN_R			17 // 16 total instructions,only 12 at
@@ -98,7 +101,7 @@
 #define GET_FUNCT_L(i)		(MASK_FUNCT_L & i) >> 14
 #define GET_DSEL_LI(i)		(MASK_DSEL_LI & i) >> 17
 #define GET_IMM_LI(i)		(MASK_IMM_LI & i)
-#define GET_FUNCT_S(i)		(MASK_FUNCT_S & i) >> 24
+#define GET_FUNCT_S(i)		( (MASK_FUNCT_S & i) >> 24 ) & 0x3
 #define GET_IMM_S(i)		(MASK_IMM_LO_S & i) | ( (MASK_IMM_HI_S & i) >> 10)
 #define GET_IMM_J(i)		(MASK_IMM_LO_J & i) | ( (MASK_IMM_HI_J) >> 5)	
 #define GET_IMM_B(i)		( (MASK_IMM_LO_B & i) >> 2 ) | ( (MASK_IMM_HI_B & i) >> 10 ) 
@@ -117,8 +120,8 @@
 #define MASK_RMEM_OPC		0x12
 #define MASK_WMEM_OPC		0x3a
 #define MASK_SYS_OPC		0x08 //more system instructions may change this
-#define MASK_MSB_OPC		0x80000000	//31st bit of instruction
-#define GET_OPC(i)			(MASK_MSB_OPC & i) >>28  //shift to make upper 6 bits, fit in 1 byte
+#define MASK_MSB_OPC		0xfc000000	//31st bit of instruction
+#define GET_OPC(i)			(MASK_MSB_OPC & i) >>26  //shift to make upper 6 bits, fit in 1 byte
 #define MASK_NO_IMM			0x00000000
 
 /*OPCode match macros*/

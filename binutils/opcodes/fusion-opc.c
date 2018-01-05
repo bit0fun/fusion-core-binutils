@@ -50,7 +50,6 @@ const char* fusion_spreg_name[13] ={
 
 //Uses ALU OP field to determine
 const fusion_opc_info_t fusion_insn_R[NUM_INSN_R] = {
-{"nop",		0x00,	USE_NONE,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x00},
 /* Name  	ALUOP	args		frmt		cpid		imm_mask		opc	*/
  {"add", 	0x00,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
  {"sub", 	0x01, 	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
@@ -68,6 +67,7 @@ const fusion_opc_info_t fusion_insn_R[NUM_INSN_R] = {
  {"nri",	0x0d,	USE_NONE,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
  {"nri",	0x0e,	USE_NONE,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
  {"nri",	0x0f,	USE_NONE,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
+ {"nop",	0x10,	USE_NONE,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x00},
 };
 
 const fusion_opc_info_t fusion_insn_I[NUM_INSN_I] = {
@@ -406,7 +406,7 @@ const fusion_opc_info_t fusion_insn_SYS[NUM_INSN_SYS] = {
 
 const fusion_opc_info_t fusion_insn_all[NUM_INSN] = {
  /*no op*/
- {"nop",	0x00,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x00},
+ {"nop",	0x00,	USE_NONE,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x00},
 /*		Integer Instructions									*/
 /* Name  	ALUOP	args		frmt		cpid		imm_mask		opc	*/
  {"add", 	0x00,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
@@ -486,5 +486,5 @@ const fusion_opc_info_t fusion_insn_all[NUM_INSN] = {
 {"sync",	0x04,	USE_NONE,	FRMT_SYS,	CPID_MAIN,	MASK_NO_IMM,		0x08},
 {"pmir",	0x05,	USE_I,		FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	0x08},
 {"pmd",		0x06, 	USE_I,		FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	0x08},
-{0,		0,	0,		0,		0,		0,			0   }
+{0,			0,		0,			0,			0,			0,				0   }
 };

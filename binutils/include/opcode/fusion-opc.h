@@ -21,7 +21,7 @@
 
 #define MAKE_LI_TYPE(RD, DSEL, IMM) \
 		( ( RD & 0x1f ) << 21) | ( ( DSEL & 0xf )<< 16) \
-		| (IMM 0xffff) | ( ( OPC_LI & 0x3f ) << 26)
+		| (IMM & 0xffff) | ( ( OPC_LI & 0x3f ) << 26)
 
 #define MAKE_S_TYPE(FUNCT, RSA, RSB, IMM) \
 		( ( FUNCT & 0x3 ) << 24) | GET_S_IMM(IMM) \
@@ -43,7 +43,7 @@
 
 #define MAKE_SYS_TYPE(RD, RSA, FUNCT, IMM) \
 		  ( (RD & 0x1f ) << 21) | ( (RSA & 0x1f) << 16) \
-		| ( (FUNCT 0xff) << 8) | ( IMM & 0xff ) \
+		| ( (FUNCT & 0xff) << 8) | ( IMM & 0xff ) \
 		| ( ( OPC_SYS & 0x3f ) << 26)
 
 /* Macros for Splitting up Immediate Values*/

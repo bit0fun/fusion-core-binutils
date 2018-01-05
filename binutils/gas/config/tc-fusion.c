@@ -30,18 +30,27 @@
 #include "opcode/fusion-opc.h"
 #include "elf/fusion.h"
 
+/*prototypes*/
+int parse_rdab( int* rd, int* rsa, int* rsb, char* op_end);
+int parse_rda(  int* rd, int* rsa, char* op_end);
+int parse_rab(  int* rsa, int* rsb, char* op_end);
+int parse_imm(  int* imm, char* op_end);
+bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t* insn, insn_t* insn_bin);
 
-
-extern const fusion_opc_info_t fusion_insn_R[NUM_INSN_R];
-extern const fusion_opc_info_t fusion_insn_I[NUM_INSN_I];
-extern const fusion_opc_info_t fusion_insn_L[NUM_INSN_L];
-extern const fusion_opc_info_t fusion_insn_LI[NUM_INSN_LI];
-extern const fusion_opc_info_t fusion_insn_S[NUM_INSN_S];
-extern const fusion_opc_info_t fusion_insn_J[NUM_INSN_J];
-extern const fusion_opc_info_t fusion_insn_JL[NUM_INSN_JL];
-extern const fusion_opc_info_t fusion_insn_B[NUM_INSN_B];
-extern const fusion_opc_info_t fusion_insn_SYS[NUM_INSN_SYS];
+//extern const fusion_opc_info_t fusion_insn_R[NUM_INSN_R];
+//extern const fusion_opc_info_t fusion_insn_I[NUM_INSN_I];
+//extern const fusion_opc_info_t fusion_insn_L[NUM_INSN_L];
+//extern const fusion_opc_info_t fusion_insn_LI[NUM_INSN_LI];
+//extern const fusion_opc_info_t fusion_insn_S[NUM_INSN_S];
+//extern const fusion_opc_info_t fusion_insn_J[NUM_INSN_J];
+//extern const fusion_opc_info_t fusion_insn_JL[NUM_INSN_JL];
+//extern const fusion_opc_info_t fusion_insn_B[NUM_INSN_B];
+//extern const fusion_opc_info_t fusion_insn_SYS[NUM_INSN_SYS];
 extern const fusion_opc_info_t fusion_insn_all[NUM_INSN];
+
+extern const char* fusion_gpreg_name[32];
+extern const char* fusion_gpreg_num[32];
+extern const char* fusion_spreg_name[13];
 
 
 const char comment_chars[]			="#";
@@ -72,7 +81,7 @@ const pseudo_typeS md_pseudo_table[] = {
 const char FLT_CHARS[] = "rRsSfFdDxXpP";
 const char EXP_CHARS[] = "eE";
 
-static valueT md_chars_to_number(char* buf, int n);
+//static valueT md_chars_to_number(char* buf, int n);
 extern int target_big_endian;
 
 void md_operand(expressionS* op __attribute__((unused))){
@@ -90,14 +99,15 @@ void md_operand(expressionS* op __attribute__((unused))){
 
 
 /*linked list of symbols labeling the current instruction*/
+/*
 struct insn_label_list{
 	struct insn_label_list* next;
 	symbolS* label;
 };
-
-static struct insn_label_list* free_insn_labels;
-#define label_list tc_segment_info_data.labels
-
+*/
+//static struct insn_label_list* free_insn_labels;
+//#define label_list tc_segment_info_data.labels
+/*
 static inline void fusion_clear_insn_labels(void) {
 	struct insn_label_list **pl;
 	segment_info_type *si;
@@ -109,29 +119,30 @@ static inline void fusion_clear_insn_labels(void) {
 		si->label_list = NULL;
 	}
 }
-
-static char* expr_end;
+*/
+//static char* expr_end;
 
 /* expression in macro instruction; set by fusion_ip 
  * when populated, it is always O_constant */
 
-static expressionS imm_expr;
+//static expressionS imm_expr;
 
 /* relocatable field is the instruction and relocations associated
  * used for offsets, and address operands in macros */
 
-static expressionS offset_expr;
-static bfd_reloc_code_real_type offset_reloc[3] = 
-	{BFD_RELOC_UNUSED, BFD_RELOC_UNUSED, BFD_RELOC_UNUSED};
+//static expressionS offset_expr;
+//static bfd_reloc_code_real_type offset_reloc[3] = 
+//	{BFD_RELOC_UNUSED, BFD_RELOC_UNUSED, BFD_RELOC_UNUSED};
 
 /* denotes if we are currently assembling an instruction*/
-static bfd_boolean fusion_assembling_insn;
+//static bfd_boolean fusion_assembling_insn;
 
 /* returns instrution length */
-static inline unsigned int insn_length( const struct fusion_cl_insn* insn ){
-	/* this may change for support for various new co-processors */
-	return 4;
-}
+
+//static inline unsigned int insn_length( const struct fusion_cl_insn* insn ){
+//	/* this may change for support for various new co-processors */
+//	return 4;
+//}
 
 
 
@@ -144,18 +155,20 @@ enum append_method{
 	/*Insert instruction before last one*/
 //	APPEND_SWP
 
-}
+};
 
 extern int target_big_endian;
 
 /*error formats*/
+/*
 enum fusion_insn_error_format{
 	ERR_FMT_PLAIN,
 	ERR_FMT_I,
 	ERR_FMT_SS,
 };
-
+*/
 /* info about error that was found while assembling current insn  */
+/*
 struct fusion_insn_error{
 	int min_argnum;
 	enum fusion_insn_error_format format;
@@ -165,40 +178,40 @@ struct fusion_insn_error{
 		const char* ss[2];
 	} u;
 };
-
+*/
 /* the actual error for current instruction*/
-static struct fusion_insn_error insn_error;
+//static struct fusion_insn_error insn_error;
 
 /*instruction information, format, operands, fix requirements*/
-struct fusion_cl_insn {
+//struct fusion_cl_insn {
 	/* opcode entry in fusion_opc_info_t*/
-	const struct fusion_opc_info_t *insn_mo;
+//	const struct fusion_opc_info_t *insn_mo;
 
 	/*actual instruction bits*/
-	insn_t insn_word;
+//	insn_t insn_word;
 
 	/* code fragment that the instruction is in*/
-	struct frag *frag;
+//	struct frag *frag;
 
 	/* offset inside of fragment where the first byte of the instruction is*/
-	long frag_offset;
+//	long frag_offset;
 
 	/* Relocations associated with instruction*/
-	fixS *fixptr;
+//	fixS *fixptr;
 
 	/*True if entry can't be moved from current position*/
-	unsigned int fixed_p : 1;
+//	unsigned int fixed_p : 1;
 	
 
-};
-
-
+//};
+//#define MAX_NOPS 1
 /* Handle of the OPCODE hash table*/
-static struct hash_control *op_hash = NULL;
+//static struct hash_control *op_hash = NULL;
 /*list of previous instructions, index 0 most recent*/
-static struct fusion_cl_insn history[1 + MAX_NOPS];
+//static struct fusion_cl_insn history[1 + MAX_NOPS];
 
 /* initialize instruction from opcode entry. don't define position yet*/
+/*
 static void create_insn(struct fusion_cl_insn *insn, const struct fusion_opc_info_t *mo){
 	insn->insn_mo = mo;
 	insn->insn_word = mo->opc;
@@ -206,28 +219,32 @@ static void create_insn(struct fusion_cl_insn *insn, const struct fusion_opc_inf
 	insn->frag_offset = 0;
 	insn->fixptr = NULL;
 }
-
+*/
 /* read instruction from buf */
+/*
 static unsigned long read_insn(char* buf){
 	return bfd_getb32 ((bfd_byte *) buf);
 }
-
+*/
 /* write instruction to buf */
+/*
 static char* write_insn(char* buf, unsigned int insn){
 	md_number_to_chars(buf, insn, 4);
 	return buf+4;
 }
-
+*/
 /* Puts instruction at the location specified by frag, and frag_offset*/
+/*
 static void install_insn(const struct fusion_cl_insn *insn){
 	char *f = insn->frag->fr_literal + insn->frag_offset;
 //	md_number_to_chars(f, insn->insn_opc, 4); //4 since 32 bit instruction
-	write_insn(f, insn->insn_opcode);
+	//write_insn(f, insn->insn_opcode);
 
-}
+}*/
 
 /*move instruction to the offset in the fragment. adjust fixes as necessary
  * and put the opcode in new location*/
+/*
 static void move_insn(struct fusion_cl_insn *insn, fragS* frag, long frag_offset){
 	insn->frag = frag;
 	insn->frag_offset = frag_offset;
@@ -237,15 +254,18 @@ static void move_insn(struct fusion_cl_insn *insn, fragS* frag, long frag_offset
 	}
 	install_insn(insn);
 }
+*/
 
 /*add insn to end of output*/
+/*
 static void add_fixed_insn(struct fusion_cl_insn* insn){
 	char* f = frag_more(4); //4 since 32 bit instructions only
 	move_insn(insn, frag_now, f - frag_now->fr_literal);
 }
-
+*/
 /* start a variant fragment and move instruction to the start of the variant
  * part marking it as fixed*/
+/*
 static void add_relaxed_insn(struct fusion_cl_insn* insn, int max_chars,
 		int var, relax_substateT subtype, symbolS* symbol, 
 		offsetT offset){
@@ -256,7 +276,7 @@ static void add_relaxed_insn(struct fusion_cl_insn* insn, int max_chars,
 			NULL);
 
 }
-
+*/
 //not using at the moment
 
 /*insert N copies of INSN into history buffer, starting at first.
@@ -268,14 +288,16 @@ static void add_relaxed_insn(struct fusion_cl_insn* insn, int max_chars,
 //}
 
 /* clear error in insn_error  */
+/*
 static void clear_insn_error(void){
 	memset(&insn_error, 0, sizeof(insn_error));
 }
-
+*/
 /*possibly record error message, msg, for current instruction
  * if error is about argument, argnum, is 1 otherwise 0
  * format is the format of the message. return true if used, 
  * false if kept*/
+/*
 static bfd_boolean set_insn_error_format(int argnum, 
 			enum fusion_insn_error_format format, const char* msg){
 	if(argnum == 0){
@@ -297,23 +319,27 @@ static bfd_boolean set_insn_error_format(int argnum,
 	insn_error.msg = msg;
 	return TRUE;
 }
-
+*/
 /* record an instruction error wirth no % foramt fields
  * argnum and msg are for set_insn_error_format*/
+/*
 static void set_insn_error(int argnum, const char* msg){
 	set_insn_error_format(argnum, ERR_FMT_PLAIN, msg);
 }
-
+*/
 /* record instruction error with one %d field, I.
  * argnum and msg are for set_insn_error_format */
+/*
 static void set_insn_error_i (int argnum, const char* msg, int i){
-	if(set_insn_error_format(argnum, ERR_FMT_T, msg)){
+	if(set_insn_error_format(argnum, ERR_FMT_I, msg)){
 		insn_error.u.i = i;
 	}
 }
+*/
 
 /* record instruction error with two %s fileds, s1, s2
  * argnum and msg are for set_insn_error_format */
+/*
 static void set_insn_error_ss(int argnum, const char* msg, const char* s1,
 		const char* s2){
 	if(set_insn_error_format(argnum, ERR_FMT_SS, msg)){
@@ -321,8 +347,9 @@ static void set_insn_error_ss(int argnum, const char* msg, const char* s1,
 		insn_error.u.ss[1] = s2;
 	}
 }
-
+*/
 /* report the error in insn_error, which is against assembly code str*/
+/*
 static void report_insn_error(const char* str){
 	const char* msg = concat(insn_error.msg, " `%s'", NULL);
 	switch(insn_error.format){
@@ -339,7 +366,7 @@ static void report_insn_error(const char* str){
 	}
 	free ((char *) msg);
 }
-
+*/
 
 struct regname{
 	const char* name;
@@ -365,30 +392,38 @@ static void hash_reg_name(enum reg_file regf, const char* name, unsigned n){
 	const char* retval = hash_insert(reg_names_hash, name, hash); 
 
 	if(retval !=NULL){
-		as_fatal(_("internal error: can't hash `%s': %s"), name, hash);
+		as_fatal(_("internal error: can't hash `%s': %s"), name, retval);
 	}
 
 }
 static void hash_reg_names(enum reg_file regf, const char* const names[], unsigned n){
 	unsigned i;
 	for(i = 0; i < n; i++){
-		hash_reg_name(class, names[i], i);
+		hash_reg_name(regf, names[i], i);
 	}
 
 }
-
+/*
 static unsigned int reg_lookup_internal(const char* s, enum reg_file regf){
 	struct regname* r = (struct regname* )hash_find(reg_names_hash, s);
 	if( r == NULL || DECODE_REG_FILE(r) != regf)
 		return -1;
 	return DECODE_REG_NUM(r);
 }
+*/
+
+
+/*For validating instruction*/
+static bfd_boolean validate_fusion_insn(const struct fusion_opc_info_t *opc ATTRIBUTE_UNUSED){
+		/*Fix later to actually check if setup right*/
+	return TRUE;
+}
 
 void md_begin(void) {
-	const fusion_opc_info_t* insn;
-	int i;
+	int i = 0;
+	if(!bfd_set_arch_mach(stdoutput, bfd_arch_fusion, 0))
+			as_warn(_("Couldn't set architecture and machine"));
 	op_hash_ctrl = hash_new();
-
 	while(fusion_insn_all[i].name){
 		const char* name = fusion_insn_all[i].name;
 		const char* hash_error = 
@@ -398,26 +433,31 @@ void md_begin(void) {
 					fusion_insn_all[i].name, hash_error);
 			as_fatal(_("Assembler is broken. I'm not touching that file, fix me plz."));
 		}
-				
+			
+		do{
+			if(!validate_fusion_insn(&fusion_insn_all[i]))	{
+				as_fatal(_("Assembler is broken. Instruction not valid"));
+			}
+			++i;
+
+		}while(fusion_insn_all[i].name && !strcmp(fusion_insn_all[i].name, name));
 	}
 	reg_names_hash = hash_new();
-	hash_reg_names(REGF_GPR, fusion_gpreg_name, NGPR);
-	hash_reg_names(REGF_GPR, fusion_gpreg_num, NGPR);
-
+	hash_reg_names(REGF_GPR, fusion_gpreg_name, 32);
+	hash_reg_names(REGF_GPR, fusion_gpreg_num, 32);
 #define DECLARE_SYSREG(name, num)	hash_reg_name(REGF_SYS, #name, num);
 	record_alignment(text_section, 2);
-	bfd_set_arch_mach(stdoutput, bfd_arch_fusion, 0);
-
 }
-
+/*
 static symbolS* make_internal_label(void){
 	return (symbolS*) local_symbol_make(FAKE_LABEL_NAME, now_seg,
 			(valueT) frag_now_fix(), frag_now);
 
 }
-
+*/
 /*pc relative access*/
-static void pcrel_access(int destreg, int tempreg, expeessionS *ep,
+/*
+static void pcrel_access(int destreg, int tempreg, expressionS *ep,
 			const char* lo_insn, const char* lo_patter,
 			bfd_reloc_code_real_type hi_reloc,
 			bfd_reloc_code_real_type lo_reloc){
@@ -429,11 +469,12 @@ static void pcrel_access(int destreg, int tempreg, expeessionS *ep,
 
 
 }
-
+*/
 
 /*Parse functions*/
 
 /*Parse expression, then restore input line pointer*/
+/*
 static char* parse_expt_save_ilp(char *s, expressionS* op){
 	char* save = input_line_pointer;
 	input_line_pointer = s;
@@ -442,16 +483,16 @@ static char* parse_expt_save_ilp(char *s, expressionS* op){
 	input_line_pointer = save;
 	return s;
 }
-
+*/
 
 
 /*Parse register for operands*/
 static int parse_register_operand(char** ptr){
 	 int reg;
 	 char* s = *ptr;
-
+//	SKIP_SPACE_TABS(s);	
 	 if(*s != '$') { //denote register with $ 
-		as_bad(_("expecting register"))
+		as_bad(_("expecting register"));
 		ignore_rest_of_line();
 		return -1;
 	 }
@@ -461,19 +502,19 @@ static int parse_register_operand(char** ptr){
 	     && (s[2] == 'e')
 	     && (s[3] == 'r')
 		 && (s[4] == 'o') ){
-		*ptr += 4; 
+		*ptr += 5; 
 		return 0; //register 0
 	 } else if( (s[1] == 's') && (s[2] == 'p')) {
-			*ptr += 2;
+			*ptr += 3;
 			return 1;
 	 } else if( (s[1] == 'f') && (s[2] == 'p')){
-	 		*ptr += 2;
+	 		*ptr += 3;
 			return 2;
 	 } else if( (s[1] == 'g') && (s[2] == 'p')) {
-			*ptr += 2;
+			*ptr += 3;
 			return 3;
 	 } else if( (s[1] == 'r') && (s[2] == 'a')) {
-			*ptr += 2;
+			*ptr += 3;
 			return 4;
 	 } else if( (s[1] == 'a') && (s[2] == 'r') && (s[3] == 'g')) {
 			reg = s[4] - '0'; //get number value
@@ -544,7 +585,7 @@ static int parse_register_operand(char** ptr){
 	 	*ptr += 5;
 		return 31; //LOW0 is R31
 	 } else {
-			as_bad(_("expecting register, unknown operand"));	
+			as_bad(_("expecting register, unknown operand:%s"),*ptr);	
 			ignore_rest_of_line();
 			return -1; 
 	 }
@@ -554,13 +595,13 @@ static int parse_register_operand(char** ptr){
 /*Operand Parsing functions; take various parameters in and spit out
  * the index number for the registers*/
 
-int parse_rdab( char* str, int rd, int rsa, int rsb, char* op_end){
+int parse_rdab( int* rd, int* rsa, int* rsb, char* op_end){
 
 	//skipping spaces
 	while( (*op_end == ' ') || (*op_end == '\t') )
 	       op_end++;	
 
-	rd = parse_register_operand(&op_end);
+	*rd = parse_register_operand(&op_end);
 	if(*op_end != ','){
 		as_warn(_("expecting comma deliminated registers"));
 	}
@@ -570,7 +611,7 @@ int parse_rdab( char* str, int rd, int rsa, int rsb, char* op_end){
 	while( (*op_end == ' ') || (*op_end == '\t'))
 		op_end++;
 
-	rsa = parse_register_operand(&op_end);
+	*rsa = parse_register_operand(&op_end);
 
 	if(*op_end != ','){
 		as_warn(_("expecting comma deliminated registers"));
@@ -579,7 +620,7 @@ int parse_rdab( char* str, int rd, int rsa, int rsb, char* op_end){
 	while( (*op_end == ' ') || (*op_end == '\t'))
 		op_end++;
 
-	rsb = parse_register_operand(&op_end);
+	*rsb = parse_register_operand(&op_end);
 	
 	while( (*op_end == ' ') || (*op_end == '\t'))
 		op_end++;
@@ -589,39 +630,13 @@ int parse_rdab( char* str, int rd, int rsa, int rsb, char* op_end){
 	return 0;
 } 
 
-int parse_rda( char* str, int rd, int rsa, char* op_end){
+int parse_rda( int* rd, int* rsa, char* op_end){
 
 	//skipping spaces
 	while( (*op_end == ' ') || (*op_end == '\t') )
 	       op_end++;	
 
-	rd = parse_register_operand(&op_end);
-	if(*op_end != ','){
-		as_warn(_("expecting comma deliminated registers"));
-	}
-	op_end++;
-
-	//get rid of spaces and tabs
-	while( (*op_end == ' ') || (*op_end == '\t'))
-		op_end++;
-
-	rsa = parse_register_operand(&op_end);
-	
-	while( (*op_end == ' ') || (*op_end == '\t'))
-		op_end++;
-	if(*op_end != '\0')
-		as_warn(_("ignored rest of line"));
-
-	return 0;
-} 
-
-int parse_rab( char* str, int rsa, int rsb, char* op_end){
-
-	//skipping spaces
-	while( (*op_end == ' ') || (*op_end == '\t') )
-	       op_end++;	
-
-	rsa = parse_register_operand(&op_end);
+	*rd = parse_register_operand(&op_end);
 	if(*op_end != ','){
 		as_warn(_("expecting comma deliminated registers"));
 	}
@@ -631,7 +646,7 @@ int parse_rab( char* str, int rsa, int rsb, char* op_end){
 	while( (*op_end == ' ') || (*op_end == '\t'))
 		op_end++;
 
-	rsb = parse_register_operand(&op_end);
+	*rsa = parse_register_operand(&op_end);
 	
 	while( (*op_end == ' ') || (*op_end == '\t'))
 		op_end++;
@@ -641,14 +656,40 @@ int parse_rab( char* str, int rsa, int rsb, char* op_end){
 	return 0;
 } 
 
-int parse_imm( char* str, int rsa, int rsb, char* op_end){
-
-	expressionS arg;
+int parse_rab( int* rsa, int* rsb, char* op_end){
 
 	//skipping spaces
 	while( (*op_end == ' ') || (*op_end == '\t') )
 	       op_end++;	
-	imm = 
+
+	*rsa = parse_register_operand(&op_end);
+	if(*op_end != ','){
+		as_warn(_("expecting comma deliminated registers"));
+	}
+	op_end++;
+
+	//get rid of spaces and tabs
+	while( (*op_end == ' ') || (*op_end == '\t'))
+		op_end++;
+
+	*rsb = parse_register_operand(&op_end);
+	
+	while( (*op_end == ' ') || (*op_end == '\t'))
+		op_end++;
+	if(*op_end != '\0')
+		as_warn(_("ignored rest of line"));
+
+	return 0;
+} 
+
+int parse_imm( int* imm, char* op_end){
+
+	//expressionS arg;
+
+	//skipping spaces
+	while( (*op_end == ' ') || (*op_end == '\t') )
+	       op_end++;	
+	*imm = 0x00;
 
 	return 0;
 } 
@@ -659,6 +700,7 @@ int parse_imm( char* str, int rsa, int rsb, char* op_end){
  * ip: instruction information
  * address_expr: operand of instruciton to be used with reloc_type
  * expansionp: true if instruction is part of macro expansion*/
+/*
 static void append_insn(struct fusion_cl_insn* ip, expressionS* address_expr,
 		bfd_reloc_code_real_type* reloc_type, bfd_bolean expansionp){
 
@@ -671,8 +713,9 @@ static void append_insn(struct fusion_cl_insn* ip, expressionS* address_expr,
 
 
 }
+*/
 
-
+/*
 static const char* fusion_ip(char *str, struct fusion_cl_insn* ip, 
 		expressionS* imm_expr, bfd_reloc_code_real_type* imm_reloc){
 	char* s;
@@ -686,7 +729,7 @@ static const char* fusion_ip(char *str, struct fusion_cl_insn* ip,
 
 }
 
-
+*/
 
 
 
@@ -695,30 +738,30 @@ static const char* fusion_ip(char *str, struct fusion_cl_insn* ip,
  * insn: struct values to grab
  * insn_bin: binary value to get
  * returns FALSE if can't assemble*/
-bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t insn, insn_t insn_bin){
+bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t* insn, insn_t* insn_bin){
 	unsigned cpid_value = insn->cpid; //get CPID value
 	insn_t opc = insn-> opc; //get opcode
-	unsigned args
+	unsigned args;
 	char* op_start = str;
-	char* op_end;
+	char* op_end = str;
 
-	if( (cpid_value) == NULL){
+	if( (cpid_value) > 0){
 		as_bad(_("Unknown co-processor instruction: %s"), op_start);
-		return;
+		return FALSE;
 	} else if(cpid_value == CPID_MAIN){ //if for main processor
 	
-	unsigned args = insn->args; //operands for instruction	
+	args = insn->args; //operands for instruction	
 
-	if( (args) == NULL){
+	if( (args > 8) ){
 		as_bad(_("Incorrect arguments, what did you do? insn: %s"), op_start);
-		return;
+		return FALSE;
 	}
 	
 	//operand values
 	int Rd = 0;  //Destination Register
 	int RSa = 0; //Source A register
 	int RSb = 0; //Source B register
-	int imm = 0; //Immediate value
+	//int imm = 0; //Immediate value
 
 	insn_t imm_mask = insn->imm_mask;	
 	if(imm_mask == MASK_NO_IMM){
@@ -732,173 +775,187 @@ bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t insn, insn_t insn_bin
 				break;
 	
 			case USE_RDAB:
-				parse_rdab(str, Rd, RSa, RSb, op_end);
+				parse_rdab( &Rd, &RSa, &RSb, op_end);
 				break;
-	
-
 
 			case USE_RDA:
-				parse_rda(str, Rd, RSa, op_end);
-				break;
-
-						case USE_RDI:
-				parse_rdi(str, Rd, imm, op_end);
+				parse_rda( &Rd, &RSa, op_end);
 				break;
 
 			case USE_RAB:
-				parse_rab(str, RSa, RSb, op_end);
+				parse_rab( &RSa, &RSb, op_end);
 				break;
 
 		
 		}
 
 	if( (Rd == -1) || (RSa == -1) || (RSb == -1) ){
-		as_bad(_("unknown register used %s"), *op_start);	
-	}
+				as_bad(_("unknown register used %s"), op_start);	
+				return FALSE;
+			}
+		/*
+			} else { //instructions use immediate values
+				switch(args){
+					case USE_RDAI:
+						parse_rdai(str, &Rd, &RSa, imm, op_end);
+						break;	
+					case USE_RDI:
+						parse_rdi(str, &Rd, &imm, op_end);
+						break;
+					case USE_RAI:
+						parse_rai(str, &RSa, &imm, op_end);
+						break;
+					case USE_RI:
+						parse_imm(str, &imm, op_end);
+						while( (*op_end == ' ') || (*op_end == '\t'))
+							op_end++;
+						if(*op_end != '\0')
+							as_warn(_("ignored rest of line"));
+						break;	
 
-	} else { //instructions use immediate values
-		switch(args){
-			case USE_RDAI:
-				parse_rdai(str, Rd, RSa, imm, op_end);
-				break;	
-			case USE_RAI:
-				parse_rai(str, RSa, imm, op_end);
+
+				
+				}	
+		*/	
+			}
+
+
+			/*Temporary immediate value, until relocatations are finalized*/
+			int imm_tmp = 0xdeadbeef;
+
+			/*Determine which instruction kind*/
+			switch(opc){
+				/*Integer Instructions*/
+				case OPC_INT:
+				*insn_bin = MAKE_R_TYPE(Rd, RSa, RSb, 0, insn->index );
+					break;
+				/*Immediate Instructions*/
+				case OPC_IMM:
+					as_warn(_("immediate instructions not  \
+						implemented yet: %s"), op_start);
+					*insn_bin = MAKE_I_TYPE(Rd, RSa, imm_tmp , insn->index);
+					break;
+				/*Load Instructions*/
+				case OPC_LD:
+					as_warn(_("immediate instructions not \
+						implemented yet: %s"), op_start);
+					*insn_bin = MAKE_L_TYPE(Rd, RSa, insn->index, imm_tmp);
+					break;
+				/*Store Instructions*/	
+				case OPC_ST:
+					as_warn(_("immediate instructions not \
+						implemented yet: %s"), op_start);
+					*insn_bin = MAKE_S_TYPE(insn->index, RSa, RSb, imm_tmp);
+					break;	
+				/*Load Immeidate Instructions*/
+				case OPC_LI:
+					as_warn(_("immediate instructions not \
+						implemented yet: %s"), op_start);
+					*insn_bin = MAKE_LI_TYPE(Rd, insn->index, imm_tmp);
+					break;
+				/*Jump Instruction*/
+				case OPC_JMP:
+					as_warn(_("immediate instructions not \
+						implemented yet: %s"), op_start);		
+					*insn_bin = MAKE_J_TYPE(RSa, imm_tmp);
+					break;
+				/*Jump Link Instruction*/
+				case OPC_JLNK:
+					as_warn(_("immediate instructions not \
+						implemented yet: %s"), op_start);
+					*insn_bin = MAKE_JL_TYPE(RSa, imm_tmp);
 				break;
-			case USE_RI:
-				parse_imm(str, imm, op_end);
-				while( (*op_end == ' ') || (*op_end == '\t'))
-					op_end++;
-				if(*op_end != '\0')
-					as_warn(_("ignored rest of line"));
-				break;	
+				/*Branch Instructions*/
+				case OPC_BRANCH:
+					as_warn(_("immediate instructions not \
+						implemented yet: %s"), op_start);
+					*insn_bin = MAKE_B_TYPE(RSa, RSb, imm_tmp, insn->index);
+					break;
+				/*System Instrucitons*/
+				case OPC_SYS:
+					as_warn(_("immediate instructions not \
+						implemented yet: %s"), op_start);
+					*insn_bin = MAKE_SYS_TYPE(Rd, RSa, insn->index, imm_tmp);
+					break;
+				/*Unknown Instructions*/
+				case 0x00:
+					*insn_bin = 0x00000000; //since nop
+					break;
+				default:
+					as_bad(_("Unknown opcode, \
+						how did you manage that?: %s"), op_start);
+					*insn_bin = 0x00000000;
+					break;
+			
+			}
+			} else{
+				as_bad (_("No co-processor instructions exist yet, don't know \
+							what this is: %s"), op_start);
+				return FALSE;
+			}
 
-
-		
-		}	
-	
-	}
-
-
-	/*Temporary immediate value, until relocatations are finalized*/
-	int imm_tmp = 0xdeadbeef;
-
-	/*Determine which instruction kind*/
-	switch(insn->opc){
-		/*Integer Instructions*/
-		case OPC_INT:
-			MAKE_R_TYPE(Rd, RSa, RSb, 0, insn->index );
-			break;
-		/*Immediate Instructions*/
-		case OPC_IMM:
-			as_warn(_("immediate instructions not 
-				implemented yet: %s"), *op_start);
-			MAKE_I_TYPE(Rd, RSa, imm_tmp , insn->index);
-			break;
-		/*Load Instructions*/
-		case OPC_LD:
-			as_warn(_("immediate instructions not 
-				implemented yet: %s"), *op_start);
-			MAKE_L_TYPE(Rd, RSa, insn->index, imm_tmp);
-			break;
-		/*Store Instructions*/	
-		case OPC_ST:
-			as_warn(_("immediate instructions not 
-				implemented yet: %s"), *op_start);
-			MAKE_S_TYPE(insn->index, RSa, RSb, imm_tmp);
-			break;	
-		/*Load Immeidate Instructions*/
-		case OPC_LI:
-			as_warn(_("immediate instructions not 
-				implemented yet: %s"), *op_start);
-			MAKE_LI_TYPE(Rd, insn->index, imm_tmp);
-			break;
-		/*Jump Instruction*/
-		case OPC_J:
-			as_warn(_("immediate instructions not 
-				implemented yet: %s"), *op_start);		
-			MAKE_J_TYPE(RSa, imm_tmp);
-			break;
-		/*Jump Link Instruction*/
-		case OPC_JL:
-			as_warn(_("immediate instructions not 
-				implemented yet: %s"), *op_start);
-			MAKE_JL_TYPE(RSa, imm_tmp);
-		break;
-		/*Branch Instructions*/
-		case OPC_B:
-			as_warn(_("immediate instructions not 
-				implemented yet: %s"), *op_start);
-			MAKE_B_TYPE(RSa, RSb, imm_tmp, insn->index);
-			break;
-		/*System Instrucitons*/
-		case OPC_SYS:
-			as_warn(_("immediate instructions not 
-				implemented yet: %s"), *op_start);
-			MAKE_SYS_TYPE(Rd, RSa, insn->index, imm_tmp);
-			break;
-		/*Unknown Instructions*/
-		default:
-			as_bad(_("Unknown opcode, 
-				how did you manage that?: %s"), op_start);
-			break;
-	
-	}
-	} else{
-		as_bad (_("No co-processor instructions exist yet, don't know 
-					what this is: %s", op_start));
-	}
-
-
-}
+			return TRUE;
+		}
 
 
 
-void md_assemble(char* str){
-	char* op_start;
+		void md_assemble(char* str){
+			as_warn("Not real warning: in md_assemble");
+			char* op_start;
+			char* op_end;
 
+			fusion_opc_info_t *insn;
+			char* p;
+			char pend;
+			
+			insn_t iword = 0;
+			int nlen = 0;
 
-	fusion_opc_info_t *insn;
-	char* p;
-	char pend;
-	
-	insn_t iword = 0;
-	int nlen = 0;
+			SKIP_SPACE_TABS(str);
 
-	SKIP_SPACE_TABS(str);
+			op_start = str;
 
-	op_start = str;
+			/* Finding op code end*/
+			for(op_end = str; *op_end && !is_end_of_line[*op_end & 0xff] && *op_end != ' ';
+					op_end++)
+				nlen++;
 
-	/* Finding op code end*/
-	for(op_end = str; *op_end && !is_end_of_line[*op_end & 0xff] && *op_end != ' ';
-			op_end++)
-		nlen++;
+			pend = *op_end;
+			*op_end = 0;
 
-	pend = *op_end;
-	*op_end = 0;
-
-	if(nlen == 0){
-		as_bad (_("couldn't find instruction"));
-		insn = (fusion_opc_info_t *)hash_find(op_hash_ctrl, op_start);
-		*op_end = pend;
-	}
-	
-	if(insn == NULL){
-		as_bad(_("Unknown instruction: %s"), op_start);
-		return;
-	}
-	p = frag_more(4);
-
-	bfd_boolean assemble_success = assemble_insn_bin(op_start, insn, iword);
+			if(nlen == 0){
+				as_bad (_("couldn't find instruction"));
+			}
+			insn = (fusion_opc_info_t *)hash_find(op_hash_ctrl, op_start);
+			*op_end = pend;
+			
+			if(insn == NULL){
+				as_bad(_("Unknown instruction: %s"), op_start);
+				return;
+			}
+			p = frag_more(4);
+	as_warn(_("Not real warning: opstart=%s, opend=%s"),op_start, op_end);
+	bfd_boolean assemble_success = assemble_insn_bin(op_end, insn, &iword);
 	/*Make sure assembly is done properly*/	
 	if( !assemble_success ){
 		as_bad(_("Couldn't assemble instruction:%s"), op_start);
 		return;
 	}
+
+	md_number_to_chars(p, iword, 4);
+	dwarf2_emit_insn(0);
+	while(ISSPACE(*op_end))
+			op_end++;
+//	if(*op_end != 0)
+//		as_warn(_("rest of line ignored; clean yo shit"));
+	if(pending_reloc)
+		as_warn(_("something forgot to clean up ooooooh\n"));
 	
 }
 
 /* move all labels in 'labels' to current insertion point
  * text_p states whether dealing with text or data segments*/
+/*
 static void fusion_move_labels(struct insn_label_list* labels, 
 		bfd_boolean text_p){
 	struct insn_label_list* l;
@@ -912,13 +969,14 @@ static void fusion_move_labels(struct insn_label_list* labels,
 	}
 
 }
-
+*/
 /* move all labels in insn_labels to current insertion point
  * treat them as text labels*/
+/*
 static void fusion_move_text_labels(void){
 	fusion_move_labels(seg_info(now_seg)->label_list, TRUE);
 }
-
+*/
 /*end current fragment. make it a varient fragment and record the relaxation
  * info*/
 //static void relax_close_frag(void){
@@ -936,22 +994,26 @@ static void fusion_move_text_labels(void){
 //}
 
 /*determine if branch*/
+/*
 static enum branch_p(fuion_cl_insn* ip){
 	return(ip->insn_mo->opc & (OPC_BRANCH));
 }
+*/
 
 /*figure out how to add IP to instruction stream*/
+/*
 static enum append_method get_append_method(struct fusion_cl_insn* ip,
 			expressionS* address_expr, 
 			bfd_reloc_code_real_type* reloc_type){
 	if(branch_p(ip)){
-		return APPEND_ADD_WITH_NOP;
+		return APPEND_NOP;
 	}
 
 	return APPEND_NORMAL;
 
 
 }
+*/
 
 /* try to resolve relocation, reloc, against constant operand at assembly time
  * return true on success, storing resolved value in result*/
@@ -998,7 +1060,48 @@ void md_show_usage(FILE* stream ATTRIBUTE_UNUSED){
 	fprintf(stream, _("\nNo options available at the moment\n"));
 }
 
-/*void md_apply_fix(fixS *fixP ATTRIBUTE_UNUSED, valueT* valP ATTRIBUTE_UNUSED, segT seg ATTRIBUTE_UNUSED){
+void md_apply_fix(fixS *fixP ATTRIBUTE_UNUSED, valueT* valP ATTRIBUTE_UNUSED, segT seg ATTRIBUTE_UNUSED){
+	char* buf = fixP->fx_where + fixP->fx_frag->fr_literal;
+	long val = *valP;
+//	long newval;
+	long max, min;
+
+	max = min = 0;
+	switch(fixP->fx_r_type){
+		case BFD_RELOC_32:
+				buf[0] = val >> 24;
+				buf[1] = val >> 16;
+				buf[2] = val >> 8;
+				buf[3] = val; //no shift, why would you do that?
+				buf += 4;
+				break;
+		case BFD_RELOC_FUSION_14_PCREL:
+			if(!val)
+				break;
+			if( (val < -8192) || (val < 8191) )
+					as_bad_where(fixP->fx_file, fixP->fx_line,
+									_("too large pc relative branch"));
+			//newval = md_chars_to_number(buf, 2);
+			break;
+		case BFD_RELOC_FUSION_21_PCREL:
+			if(!val)
+				break;
+			if( (val < -1048576) || (val < 1048575) )
+					as_bad_where(fixP->fx_file, fixP->fx_line,
+									_("too large pc relative jump"));
+		//	newval = md_chars_to_number(buf, 3); //24 bit, since 21 used
+		
+			break;
+
+		default:
+			abort();
+
+	if( (max != 0) && ( (val < min) || (val > max) ) )
+			as_bad_where(fixP->fx_file, fixP->fx_line, _("offset out of range"));
+	if( (fixP->fx_addsy == NULL) && fixP->fx_pcrel == 0)
+			fixP->fx_done = 1;
+	
+	}
 }
 
 arelent *tc_gen_reloc(asection* section ATTRIBUTE_UNUSED, fixS *fixp){
@@ -1016,22 +1119,17 @@ arelent *tc_gen_reloc(asection* section ATTRIBUTE_UNUSED, fixS *fixp){
 
 	if(rel->howto == NULL){
 		as_bad_where(fixp->fx_file, fixp->fx_line, _("Cannot represent relocation type %s"),bfd_get_reloc_code_name(r_type));
-		*/
 		/*set to garbage value to continue usage*/
-/*		rel->howto = bfd_reloc_type_lookup(stdoutput, BFD_RELOC_32);
+		rel->howto = bfd_reloc_type_lookup(stdoutput, BFD_RELOC_32);
 		gas_assert(rel->howto != NULL);
 	
 	}
 
 	return rel;
 }
-*/
 
-void md_number_to_chars(char* ptr, valueT use, int nbytes){
-	number_to_chars_bigendian(ptr, use, nbytes);
 
-}
-
+/*
 static valueT md_chars_to_number(char* buf, int n){
 	valueT result = 0;
 	unsigned char* where = (unsigned char* ) buf;
@@ -1041,5 +1139,5 @@ static valueT md_chars_to_number(char* buf, int n){
 	}	
 	return result;
 }
-
+*/
 

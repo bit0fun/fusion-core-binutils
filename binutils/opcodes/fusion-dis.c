@@ -44,17 +44,24 @@ extern const char* fusion_spreg_name[13];
 
 int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 
+
 	int status;
 	stream = info->stream;
 	const fusion_opc_info_t *insn;
-	unsigned short insn_word;
+	insn_t insn_word;
 	fpr = info->fprintf_func;
+	bfd_byte buf_insn[4];
+	unsigned short opc;
+	
 
-	if ((status = info->read_memory_func (addr, (unsigned char*) &insn_word, 2, info)))
+	if ((status = info->read_memory_func (addr, buf_insn, 4, info)))
 		goto fail;
 //	fpr (stream, "%s", fusion_inst[opcode].name);
-		
+	insn_word = (insn_t) bfd_getb32(buf_insn);
+	opc = GET_OPC(insn_word);
+	printf("opc: %x\n", opc );
 	//Figure out format
+	
 	if( IS_R_TYPE(insn_word) ) {	//need to get alu op to determine instruction
 		insn = &fusion_insn_R[ GET_ALUOP(insn_word) ]; //which instruction to choose
 		fpr(stream, "%s\t%s, %s, %s", insn->name,\
@@ -88,7 +95,7 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 						GET_IMM_L(insn_word),\
 						fusion_gpreg_name[ GET_RSA(insn_word) ] );
 	
-	} else if( IS_J_TYPE(insn_word) ) {
+	} else if((opc == 0x06) || (opc == 0x07)){// else if( IS_J_TYPE(insn_word) ) {
 		if( GET_RSA(insn_word) == 0x00 ) { //if just a normal jump
 			if ( IS_JLNK_INSN( insn_word ) ) //if jump and link
 				fpr(stream, "jal\t0x%x",  GET_IMM_J(insn_word)  );
@@ -157,7 +164,7 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 								GET_IMM_SYS(insn_word) );
 					break;
 			default:
-				fpr(stream, "nri"); //not a real instruction
+				fpr(stream, "nri_sys"); //not a real instruction
 				break;
 		}
 		
@@ -166,12 +173,14 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 	} else if( IS_CP_INSN(insn_word) ) {
 		fpr( stream, "cpinsn?"); //coprocessor instruction, should fix
 								//this soon
-	} else {
-		fpr( stream, "nri"); //not real instruction, or just unknown
+	} else if( insn_word == 0x00000000){
+		fpr(stream, "nop"); //only for nops
+	}else {
+		fpr( stream, "nri_unk"); //not real instruction, or just unknown
 	}
 
 
-	return 1;
+	return 4;
 
 	fail:
 		info->memory_error_func (status, addr, info);
