@@ -20,8 +20,8 @@
 
 /* Contributed by Dylan Wadler  */
 
-
-
+#define WORST_CASE	4
+#define DEBUG
 
 #include "as.h"
 #include "config.h"
@@ -30,33 +30,56 @@
 #include "opcode/fusion-opc.h"
 #include "elf/fusion.h"
 
+/*instruction information, format, operands, fix requirements*/
+struct fusion_cl_insn {
+	/* opcode entry in fusion_opc_info_t*/
+	const struct fusion_opc_info_t *insn_mo;
+
+	/*actual instruction bits*/
+	insn_t insn_word;
+
+	/* code fragment that the instruction is in*/
+	struct frag *frag;
+
+	/* offset inside of fragment where the first byte of the instruction is*/
+	long frag_offset;
+
+	/* Relocations associated with instruction*/
+	fixS *fixptr;
+
+	/*True if entry can't be moved from current position*/
+	unsigned int fixed_p : 1;
+	
+};
+
+
 /*prototypes*/
-int parse_rdab( int* rd, int* rsa, int* rsb, char* op_end);
-int parse_rda(  int* rd, int* rsa, char* op_end);
-int parse_rab(  int* rsa, int* rsb, char* op_end);
-int parse_imm(  int* imm, char* op_end);
+void fusion_pop_insert(void);
 
-int parse_rdi(int* rd, int* imm, char* op_end);
-int parse_rdai( int* rd, int* rsa, int* imm,  char* op_end);
-int parse_rai(int *rsa, int* imm, char* op_end);
-int parse_rabi(int* rsa, int* rsb, int* imm, char* op_end);
+int parse_rdab(int* rd, int* rsa, int* rsb, char* op_end);
+int parse_rda( int* rd, int* rsa, char* op_end);
+int parse_rab( int* rsa, int* rsb, char* op_end);
+int parse_imm( int* imm, char** op_end, expressionS* imm_expr, bfd_reloc_code_real_type reloc, struct fusion_cl_insn* ip);
 
-int parse_rdai_offset( int* rd, int* rsa, int* imm,  char* op_end);
-int parse_rai_offset(int *rsa, int* imm, char* op_end);
-int parse_rabi_offset(int* rsa, int* rsb, int* imm, char* op_end);
+int parse_rdi( int* rd, int* imm, char** op_end, expressionS* imm_expr, bfd_reloc_code_real_type reloc, struct fusion_cl_insn* ip);
+int parse_rdai( int* rd, int* rsa, int* imm, char** op_end, expressionS* imm_expr, bfd_reloc_code_real_type reloc, struct fusion_cl_insn* ip);
+int parse_rai(int *rsa, int* imm, char** op_end, expressionS* imm_expr, bfd_reloc_code_real_type reloc, struct fusion_cl_insn* ip);
+int parse_rabi(int* rsa, int* rsb, int* imm, char** op_end, expressionS* imm_expr, bfd_reloc_code_real_type reloc, struct fusion_cl_insn* ip);
+
+int parse_rdai_offset( int* rd, int* rsa, int* imm,  char** op_end, expressionS* imm_expr, bfd_reloc_code_real_type reloc, struct fusion_cl_insn* ip);
+int parse_rai_offset(int *rsa, int* imm, char** op_end, expressionS* imm_expr, bfd_reloc_code_real_type reloc, struct fusion_cl_insn* ip);
+int parse_rabi_offset(int* rsa, int* rsb, int* imm, char** op_end, expressionS* imm_expr, bfd_reloc_code_real_type reloc, struct fusion_cl_insn* ip);
+
+bfd_reloc_code_real_type return_reloc(fusion_opc_info_t* insn, char* str);
+static int parse_register_operand(char** ptr);
+
+//bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t* insn, insn_t* insn_bin);
+bfd_boolean assemble_insn_bin(char* str, struct fusion_cl_insn* insn, expressionS* imm_expr, bfd_reloc_code_real_type* imm_reloc);
+static void append_insn(struct fusion_cl_insn* ip, expressionS* address_expr,
+		bfd_reloc_code_real_type reloc_type);
 
 
-bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t* insn, insn_t* insn_bin);
 
-//extern const fusion_opc_info_t fusion_insn_R[NUM_INSN_R];
-//extern const fusion_opc_info_t fusion_insn_I[NUM_INSN_I];
-//extern const fusion_opc_info_t fusion_insn_L[NUM_INSN_L];
-//extern const fusion_opc_info_t fusion_insn_LI[NUM_INSN_LI];
-//extern const fusion_opc_info_t fusion_insn_S[NUM_INSN_S];
-//extern const fusion_opc_info_t fusion_insn_J[NUM_INSN_J];
-//extern const fusion_opc_info_t fusion_insn_JL[NUM_INSN_JL];
-//extern const fusion_opc_info_t fusion_insn_B[NUM_INSN_B];
-//extern const fusion_opc_info_t fusion_insn_SYS[NUM_INSN_SYS];
 extern const fusion_opc_info_t fusion_insn_all[NUM_INSN];
 
 extern const char* fusion_gpreg_name[32];
@@ -68,7 +91,19 @@ const char comment_chars[]			="#";
 const char line_separator_chars[] 	=";";
 const char line_comment_chars[]		="#";
 
+static char *expr_end;
+
 static int pending_reloc;
+
+struct fusion_set_options{
+	int pic;
+	int relax;
+};
+
+//static struct fusion_set_options fusion_opts = {
+//	0,	/* pic   */
+//	1,	/* relax */
+//};
 
 static struct hash_control *op_hash_ctrl;
 
@@ -92,6 +127,26 @@ const pseudo_typeS md_pseudo_table[] = {
 const char FLT_CHARS[] = "rRsSfFdDxXpP";
 const char EXP_CHARS[] = "eE";
 
+#define INSERT_OPERAND(OPERAND_GEN, INSN)\
+		((INSN).insn_word |= OPERAND_GEN) 
+
+#define RELAX_BRANCH_ENCODE(uncond, length)\
+		((relax_substateT) \
+		(0xc00000000 \
+		 | ((uncond) ? 1 : 0) \
+		 | ((length) << 2)))
+
+/* Is value sign extended 32 bit value*/
+#define IS_SEXT_32BIT_NUM(x)\
+	(((x) &~ (offsetT) 0x7fffffff) == 0 \
+	 || (((x) &~ (offsetT) 0x7fffffff) == ~(offsetT) 0x7fffffff))
+
+/* Is value zero extended 32 bit value, or negated*/
+#define IS_ZEXT_32BIT_NUM(x)\
+	(((x) &~ (offsetT) 0xffffffff) == 0 \
+	 || (((x) &~ (offsetT) 0x7fffffff) == ~(offsetT) 0xffffffff))
+
+
 //static valueT md_chars_to_number(char* buf, int n);
 extern int target_big_endian;
 
@@ -109,153 +164,46 @@ void md_operand(expressionS* op __attribute__((unused))){
 #define RDATA_SECTION_NAME ".rodata"
 
 
-/*linked list of symbols labeling the current instruction*/
-/*
-struct insn_label_list{
-	struct insn_label_list* next;
-	symbolS* label;
-};
-*/
-//static struct insn_label_list* free_insn_labels;
-//#define label_list tc_segment_info_data.labels
-/*
-static inline void fusion_clear_insn_labels(void) {
-	struct insn_label_list **pl;
-	segment_info_type *si;
-	if(now_seg){
-		for(pl = &free_insn_labels; *pl != NULL; pl = &(*pl)->next)
-			;
-		si = seg_info(now_seg);
-		*pl = si->label_list;
-		si->label_list = NULL;
-	}
-}
-*/
-//static char* expr_end;
 
 /* expression in macro instruction; set by fusion_ip 
  * when populated, it is always O_constant */
 
 //static expressionS imm_expr;
 
-/* relocatable field is the instruction and relocations associated
- * used for offsets, and address operands in macros */
-
-//static expressionS offset_expr;
-//static bfd_reloc_code_real_type offset_reloc[3] = 
-//	{BFD_RELOC_UNUSED, BFD_RELOC_UNUSED, BFD_RELOC_UNUSED};
-
-/* denotes if we are currently assembling an instruction*/
-//static bfd_boolean fusion_assembling_insn;
-
 /* returns instrution length */
 
 //static inline unsigned int insn_length( const struct fusion_cl_insn* insn ){
-//	/* this may change for support for various new co-processors */
+	/* this may change for support for various new co-processors */
 //	return 4;
 //}
 
-
-
-/*what to do to output*/
-enum append_method{
-	/*Normal append instruction*/
-	APPEND_NORMAL,
-	/*Append normally, with NOP afterwards*/
-	APPEND_NOP,
-	/*Insert instruction before last one*/
-//	APPEND_SWP
-
-};
-
 extern int target_big_endian;
 
-/*error formats*/
-/*
-enum fusion_insn_error_format{
-	ERR_FMT_PLAIN,
-	ERR_FMT_I,
-	ERR_FMT_SS,
-};
-*/
-/* info about error that was found while assembling current insn  */
-/*
-struct fusion_insn_error{
-	int min_argnum;
-	enum fusion_insn_error_format format;
-	const char* msg;
-	union{
-		int i;
-		const char* ss[2];
-	} u;
-};
-*/
-/* the actual error for current instruction*/
-//static struct fusion_insn_error insn_error;
 
-/*instruction information, format, operands, fix requirements*/
-//struct fusion_cl_insn {
-	/* opcode entry in fusion_opc_info_t*/
-//	const struct fusion_opc_info_t *insn_mo;
-
-	/*actual instruction bits*/
-//	insn_t insn_word;
-
-	/* code fragment that the instruction is in*/
-//	struct frag *frag;
-
-	/* offset inside of fragment where the first byte of the instruction is*/
-//	long frag_offset;
-
-	/* Relocations associated with instruction*/
-//	fixS *fixptr;
-
-	/*True if entry can't be moved from current position*/
-//	unsigned int fixed_p : 1;
-	
-
-//};
-//#define MAX_NOPS 1
-/* Handle of the OPCODE hash table*/
-//static struct hash_control *op_hash = NULL;
 /*list of previous instructions, index 0 most recent*/
 //static struct fusion_cl_insn history[1 + MAX_NOPS];
 
 /* initialize instruction from opcode entry. don't define position yet*/
-/*
+
 static void create_insn(struct fusion_cl_insn *insn, const struct fusion_opc_info_t *mo){
 	insn->insn_mo = mo;
 	insn->insn_word = mo->opc;
 	insn->frag = NULL;
 	insn->frag_offset = 0;
 	insn->fixptr = NULL;
-}
-*/
-/* read instruction from buf */
-/*
-static unsigned long read_insn(char* buf){
-	return bfd_getb32 ((bfd_byte *) buf);
-}
-*/
-/* write instruction to buf */
-/*
-static char* write_insn(char* buf, unsigned int insn){
-	md_number_to_chars(buf, insn, 4);
-	return buf+4;
-}
-*/
+};
+
 /* Puts instruction at the location specified by frag, and frag_offset*/
-/*
+
 static void install_insn(const struct fusion_cl_insn *insn){
 	char *f = insn->frag->fr_literal + insn->frag_offset;
-//	md_number_to_chars(f, insn->insn_opc, 4); //4 since 32 bit instruction
-	//write_insn(f, insn->insn_opcode);
+	md_number_to_chars(f, insn->insn_word, 4);//insn_length(insn)); //4 since 32 bit instruction
 
-}*/
+}
 
 /*move instruction to the offset in the fragment. adjust fixes as necessary
  * and put the opcode in new location*/
-/*
+
 static void move_insn(struct fusion_cl_insn *insn, fragS* frag, long frag_offset){
 	insn->frag = frag;
 	insn->frag_offset = frag_offset;
@@ -265,26 +213,53 @@ static void move_insn(struct fusion_cl_insn *insn, fragS* frag, long frag_offset
 	}
 	install_insn(insn);
 }
-*/
+
 
 /*add insn to end of output*/
-/*
+
 static void add_fixed_insn(struct fusion_cl_insn* insn){
 	char* f = frag_more(4); //4 since 32 bit instructions only
 	move_insn(insn, frag_now, f - frag_now->fr_literal);
 }
-*/
+
 /* start a variant fragment and move instruction to the start of the variant
  * part marking it as fixed*/
-/*
+
 static void add_relaxed_insn(struct fusion_cl_insn* insn, int max_chars,
 		int var, relax_substateT subtype, symbolS* symbol, 
 		offsetT offset){
 	frag_grow(max_chars);
 	move_insn(insn, frag_now, frag_more(0) - frag_now->fr_literal);
 	insn->fixed_p = 1;
-	frag_var(rs_machine_dependent, max_chars, var, subsype, symbol, offset,
+	frag_var(rs_machine_dependent, max_chars, var, subtype, symbol, offset,
 			NULL);
+
+}
+
+/*compute length of branch sequence, adjust stored length accordingly
+ * if fragp is null, worst case length is returned*/
+/*
+static unsigned relaxed_branch_length(fragS *fragp, asection* sec, int update){
+		int jump, length = 8;
+		if(!fragp)
+			return length;
+		//jump = RELAX_BRANCH_UNCOND(fragp->fr_subtype);
+		//length = RELAX_BRANCH_LENGTH(fragp->fr_subtype);
+
+	//	length = jump ? 4 : 8;
+		if(fragp->fr_symbol != NULL
+				&& S_IS_DEFINED(fragp->fr_symbol)
+				&& !S_IS_WEAK(fragp->fr_symbol)
+				&& sec == S_GET_SEGMENT(fragp->fr_symbol)){
+
+			offsetT val = S_GET_VALUE(fragp->fr_symbol) + fragp->fr_offset;
+			val -= fragp->fr_address + fragp->fr_fix;
+		}
+	if(update){
+		fragp->fr_subtype = RELAX_BRANCH_ENCODE(jump, length);
+	}
+
+	return length;
 
 }
 */
@@ -298,86 +273,22 @@ static void add_relaxed_insn(struct fusion_cl_insn* insn, int max_chars,
 //
 //}
 
-/* clear error in insn_error  */
-/*
-static void clear_insn_error(void){
-	memset(&insn_error, 0, sizeof(insn_error));
-}
-*/
-/*possibly record error message, msg, for current instruction
- * if error is about argument, argnum, is 1 otherwise 0
- * format is the format of the message. return true if used, 
- * false if kept*/
-/*
-static bfd_boolean set_insn_error_format(int argnum, 
-			enum fusion_insn_error_format format, const char* msg){
-	if(argnum == 0){
-		if(insn_error.msg)
-			return FALSE;
-	} else {
-		if(argnum < insn_error.min_argnum)
-			return FALSE;
-		if(argnum == insn_error.min_argnum
-				&& insn_error.msg
-				&& strcmp(insn_error.msg, msg) !=0){
-			insn_error.msg = 0;
-			insn_error.min_argnum += 1;
-			return FALSE;
-		}
-	}
-	insn_error.min_argnum = argnum;
-	insn_error.format = format;
-	insn_error.msg = msg;
-	return TRUE;
-}
-*/
-/* record an instruction error wirth no % foramt fields
- * argnum and msg are for set_insn_error_format*/
-/*
-static void set_insn_error(int argnum, const char* msg){
-	set_insn_error_format(argnum, ERR_FMT_PLAIN, msg);
-}
-*/
-/* record instruction error with one %d field, I.
- * argnum and msg are for set_insn_error_format */
-/*
-static void set_insn_error_i (int argnum, const char* msg, int i){
-	if(set_insn_error_format(argnum, ERR_FMT_I, msg)){
-		insn_error.u.i = i;
-	}
-}
-*/
 
-/* record instruction error with two %s fileds, s1, s2
- * argnum and msg are for set_insn_error_format */
-/*
-static void set_insn_error_ss(int argnum, const char* msg, const char* s1,
-		const char* s2){
-	if(set_insn_error_format(argnum, ERR_FMT_SS, msg)){
-		insn_error.u.ss[0] = s1;
-		insn_error.u.ss[1] = s2;
-	}
-}
-*/
-/* report the error in insn_error, which is against assembly code str*/
-/*
-static void report_insn_error(const char* str){
-	const char* msg = concat(insn_error.msg, " `%s'", NULL);
-	switch(insn_error.format){
-		case ERR_FMT_PLAIN:
-			as_bad(msg, str);
-			break;
-		case ERR_FMT_I:
-			as_bad(msg, insn_error.u.i, str);
-			break;
-		case ERR_FMT_SS:
-			as_bad(msg, insn_error.u.ss[0], insn_error.u.ss[1],
-					str);
-			break;
-	}
-	free ((char *) msg);
-}
-*/
+/*process constants (immediate/absolute)
+ * and labels (jump targets/memory locations)*/
+//static void process_label_constant(char* str, fusion_cl_insn* insn){
+//	char* saved_input_line_pointer;
+//	int symbol_with_at = 0;
+//	int symbol_with_s = 0;
+//  int symbol_with_m = 0;
+//  int symbol_with_l = 0;
+
+//	argument *cur_arg = fusion_cl_insn->arg;
+//	input_line_pointer = str;
+//	expression(&insn->exp);
+
+//} 
+
 
 struct regname{
 	const char* name;
@@ -390,8 +301,8 @@ enum reg_file{
 	REGF_MAX
 };
 
+/*hash for registers*/
 static struct hash_control* reg_names_hash = NULL;
-
 
 #define ENCODE_REG_HASH(rf, n)\
 	((void*)(uintptr_t)((n) * REGF_MAX + (rf) + 1))
@@ -415,20 +326,31 @@ static void hash_reg_names(enum reg_file regf, const char* const names[], unsign
 
 }
 /*
-static unsigned int reg_lookup_internal(const char* s, enum reg_file regf){
-	struct regname* r = (struct regname* )hash_find(reg_names_hash, s);
-	if( r == NULL || DECODE_REG_FILE(r) != regf)
-		return -1;
-	return DECODE_REG_NUM(r);
+static bfd_boolean arg_lookup(char** s, const char* array, size_t size, unsigned* regnop){
+	const char* p = strchr(*s, ',');	
+	size_t i, len = p ? (size_t)(p - *s) : strlen(*s);
+
+	for(i = 0; i < size; i++){
+		if( (array[i] != NULL) && (strncmp(array[i], *s, len) == 0)){
+			*regnop = i;
+			*s += len;
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 */
-
 
 /*For validating instruction*/
 static bfd_boolean validate_fusion_insn(const struct fusion_opc_info_t *opc ATTRIBUTE_UNUSED){
 		/*Fix later to actually check if setup right*/
 	return TRUE;
 }
+
+struct percent_op_match{
+	const char* str;
+	bfd_reloc_code_real_type reloc;
+};
 
 void md_begin(void) {
 	int i = 0;
@@ -456,37 +378,350 @@ void md_begin(void) {
 	reg_names_hash = hash_new();
 	hash_reg_names(REGF_GPR, fusion_gpreg_name, 32);
 	hash_reg_names(REGF_GPR, fusion_gpreg_num, 32);
-#define DECLARE_SYSREG(name, num)	hash_reg_name(REGF_SYS, #name, num);
+	#define DECLARE_SYSREG(name, num)	hash_reg_name(REGF_SYS, #name, num);
 	record_alignment(text_section, 2);
 }
-/*
+
+static insn_t fusion_apply_const_reloc(bfd_reloc_code_real_type reloc_type,
+								bfd_vma value){
+	switch(reloc_type){
+		case BFD_RELOC_32:
+			return value;
+		case BFD_RELOC_16:
+			return GET_IMM_LI(value);
+		case BFD_RELOC_FUSION_HI16:
+			return GET_IMM_LI(value >> 16);
+		case BFD_RELOC_8:
+			return GEN_SYS_IMM(value);
+		case BFD_RELOC_FUSION_STORE:
+			return GEN_S_IMM(value);
+		case BFD_RELOC_FUSION_LOAD:
+			return GEN_L_IMM(value);
+		case BFD_RELOC_FUSION_12:
+			return GEN_I_IMM(value);
+		default:
+			abort();
+	}
+
+}
+
+
+/* output instruction
+ * ip: instruction information
+ * address_expr: operand of instruciton to be used with reloc_type
+ * expansionp: true if instruction is part of macro expansion*/
+static void append_insn(struct fusion_cl_insn* ip, expressionS* addr_expr,
+		bfd_reloc_code_real_type reloc_type){
+
+	dwarf2_emit_insn(0);
+	if(reloc_type != BFD_RELOC_UNUSED){
+		reloc_howto_type* howto;
+
+		gas_assert(addr_expr);
+		if( (reloc_type == BFD_RELOC_FUSION_14_PCREL) \
+			|| (reloc_type == BFD_RELOC_FUSION_21_PCREL)){
+			int j = reloc_type == BFD_RELOC_FUSION_21_PCREL;
+			int best_case = 4;//insn_length(ip->insn_word);
+			unsigned worst_case = 8;//relaxed_branch_length(NULL, NULL, 0);
+			add_relaxed_insn(ip, worst_case, best_case, 
+							RELAX_BRANCH_ENCODE(j, worst_case),
+							addr_expr->X_add_symbol,
+							addr_expr->X_add_number);
+			return;
+		} else{
+			howto = bfd_reloc_type_lookup(stdoutput, reloc_type);
+			if(howto == NULL){
+				as_bad(_("Unsupported Fusion-Core relocation number: %d"), reloc_type);
+			}
+//			ip->fixptr = fix_new_exp(ip->frag, ip->frag_offset,
+//							bfd_get_reloc_size(howto),
+//							addr_expr, FALSE, reloc_type);
+		}
+	}
+	add_fixed_insn(ip);
+	install_insn(ip);
+
+}
+
+/* Build instruction, useful for macro expansions
+ * passed to pointer the count number of instructions created so far,
+ * an expression, the name of the instruction to build,
+ * the operands required, and coresponding arguments*/
+static void macro_build(expressionS *ep, const char* name, const char* fmt, ...){
+	const struct fusion_opc_info_t* mo;
+	struct fusion_cl_insn insn;
+	bfd_reloc_code_real_type r;
+	va_list args;
+
+	va_start(args, fmt);
+	r = BFD_RELOC_UNUSED;
+	mo = (struct fusion_opc_info_t* ) hash_find(op_hash_ctrl, name);
+	gas_assert(mo);
+	create_insn(&insn, mo);
+	/*this may change, but is copied off of riscv for now*/
+	for(;;){
+		switch(*fmt++){
+			case 'd':
+				INSERT_OPERAND( GEN_RD( va_arg(args, int) ) , insn );
+				continue;
+			case 's':
+				INSERT_OPERAND( GEN_RSA( va_arg(args, int) ) , insn );
+				continue;
+			case 't':
+				INSERT_OPERAND( GEN_RSB( va_arg(args, int) ) , insn );
+				continue;
+			case '>':
+				INSERT_OPERAND( GEN_I_IMM( va_arg(args, int) ), insn);
+				continue;
+			case 'j':
+			case 'u':
+			case 'q':
+				gas_assert(ep!= NULL);
+				r = va_arg(args, int);
+				continue;
+			case '\0':
+				break;
+			case ',':
+				continue;
+			default:
+				as_fatal(_("internal error: invalid macro. nice one"));
+		}	
+		break;
+	}
+
+	va_end(args);
+	gas_assert(r == BFD_RELOC_UNUSED ? ep == NULL : ep != NULL);
+	append_insn(&insn, ep, r);
+}
+
+
+
+
+/*sign-extend 32-bit constants that have bit 31 set, and all high
+ * unset*/
+static void normalize_constant_expr(expressionS *ex){
+	if((ex->X_op == O_constant || ex->X_op == O_symbol)
+		&& IS_ZEXT_32BIT_NUM(ex->X_add_number))
+	  ex->X_add_number = (((ex->X_add_number & 0xffffffff) ^ 0x80000000)
+							-0x80000000);
+}
+/*fail if expression is not constant*/
+static void check_absolute_expr(struct fusion_cl_insn* ip, expressionS* ex){
+	if(ex->X_op == O_big)
+		as_bad(_("unsupported large constand; dat num too numb"));
+	else if(ex->X_op != O_constant)
+		as_bad(_("instruction %s requires absolute expression; get that outa here"),
+						ip->insn_mo->name);
+	normalize_constant_expr(ex);
+}
+
 static symbolS* make_internal_label(void){
-	return (symbolS*) local_symbol_make(FAKE_LABEL_NAME, now_seg,
-			(valueT) frag_now_fix(), frag_now);
-
+	return (symbolS *) local_symbol_make(FAKE_LABEL_NAME, now_seg,
+					(valueT) frag_now_fix(), frag_now);
 }
-*/
+
 /*pc relative access*/
-/*
+
 static void pcrel_access(int destreg, int tempreg, expressionS *ep,
-			const char* lo_insn, const char* lo_patter,
-			bfd_reloc_code_real_type hi_reloc,
-			bfd_reloc_code_real_type lo_reloc){
+					const char* insn_name, const char* op_str,
+					bfd_reloc_code_real_type hi_reloc,
+					bfd_reloc_code_real_type lo_reloc){
 
-	expressionS ep2;
-	ep2.X_op = O_symbol;
-	ep2.X_add_symbol = make_internal_label();
-	ep2.X_add_number = 0;
+		expressionS ep2;
+		ep2.X_op = O_symbol;
+		ep2.X_add_symbol = make_internal_label();
+		ep2.X_add_number = 0;
 
+		macro_build(ep, "lui", "d,u", tempreg, hi_reloc);
+		macro_build(&ep2, insn_name, op_str, destreg, tempreg, lo_reloc);
+		
+
+	}
+static void pcrel_load(int destreg, int tempreg, expressionS* ep,
+				const char* insn_name, bfd_reloc_code_real_type hi_reloc,
+				bfd_reloc_code_real_type lo_reloc){
+	pcrel_access(destreg, tempreg, ep, insn_name, "d,s,j", hi_reloc,
+							lo_reloc);
+}
+
+
+static void fusion_call(int tmp, expressionS *ep,
+				bfd_reloc_code_real_type reloc){
+	macro_build(ep, "lui", "d, u", tmp, reloc);
+	macro_build(NULL, "jrl", "s", tmp);  //can only be placed in RA0
 
 }
+
+/*load integer constant into register */
+static void load_const(int reg, expressionS* ep){
+	int shift = 0; //not sure what to do with this?
+	expressionS upper = *ep, lower = *ep;
+	lower.X_add_number = (int32_t) ep->X_add_number << (32-shift) >> (32-shift);
+	upper.X_add_number -= lower.X_add_number;
+
+	if(ep->X_op != O_constant){
+		as_bad(_("unsupported large constant"));
+		return;
+	}
+	
+	int hi_reg = 0;
+	if(upper.X_add_number != 0){
+		/* add lui insn*/
+		macro_build(ep, "lui", "d, u", reg, BFD_RELOC_FUSION_HI16);
+
+		hi_reg = reg;
+	}
+
+	if(lower.X_add_number != 0 || hi_reg == 0){
+		/*add li insn*/
+		macro_build(ep, "li", "d, u", reg, BFD_RELOC_16); 
+	}
+
+}
+
+/*expand macro into one or more instructions*/
+static void macro(struct fusion_cl_insn *ip, expressionS* imm_expr,
+				bfd_reloc_code_real_type* imm_reloc){
+	int rd = GET_RD( (ip->insn_word));	
+	int rsa = GET_RSA( (ip->insn_word) );
+//	int rsb = GET_RSB( (ip->insn_word) );
+	int cpid = ip->insn_mo->cpid;
+	int macro_id =(int) ip->insn_mo->index;
+
+	if(cpid != CPID_MACRO){
+		as_bad(_("Not a macro, broken assembler"));
+	} else{
+		switch(macro_id){
+			case M_LA:
+				if(!IS_SEXT_32BIT_NUM(imm_expr->X_add_number))
+					as_bad(_("immediate value too large"));
+				if(imm_expr->X_op == O_constant)	
+					load_const(rd, imm_expr);
+				else
+					pcrel_load(rd, rd, imm_expr, "li", BFD_RELOC_HI16_PCREL,
+									BFD_RELOC_16_PCREL);
+				break;
+			case M_CALL:
+				fusion_call(rsa, imm_expr, *imm_reloc);
+				break;
+			default:
+				as_bad(_("Macro %s not implemented"), ip->insn_mo->name);
+				break;
+		}	
+	}
+}
+/*
+static const struct percent_op_match percent_op_litype[] ={
+	{"%hi",			BFD_RELOC_FUSION_HI16},
+	{"%lo",			BFD_RELOC_16},
+	{"%pcrel_hi", 	BFD_RELOC_HI16_PCREL},
+	{"%pcrel_lo",	BFD_RELOC_16_PCREL},
+	{0,0}
+};
+static const struct percent_op_match percent_op_stype[] ={
+	{"%lo",			BFD_RELOC_FUSION_STORE},
+	{0,0}
+};
+static const struct percent_op_match percent_op_ltype[] ={
+	{"%lo",			BFD_RELOC_FUSION_LOAD},
+	{0,0}
+};
+static const struct percent_op_match percent_op_btype[] ={
+	{"%pcrel_lo",	BFD_RELOC_FUSION_14_PCREL},
+	{0,0}
+};
 */
 
 /*Parse functions*/
-
-/*Parse expression, then restore input line pointer*/
 /*
-static char* parse_expt_save_ilp(char *s, expressionS* op){
+static bfd_boolean parse_relocation(char** str, bfd_reloc_code_real_type* reloc,
+				const struct percent_op_match* percent_op){
+	for( ; percent_op->str; percent_op++)
+		if(strncasecmp(*str, percent_op->str, strlen(percent_op->str)) == 0){
+			int len = strlen(percent_op->str);	
+			if(!ISSPACE((*str)[len]) && (*str)[len] != '(')
+				continue;
+			*str += strlen(percent_op->str);
+			*reloc = percent_op->reloc;
+
+			if(*reloc != BFD_RELOC_UNUSED && !bfd_reloc_type_lookup(stdoutput, *reloc)){
+				as_bad("relocation %s isn't supported currently", percent_op->str);
+				*reloc = BFD_RELOC_UNUSED;
+			}
+			return TRUE;
+		}
+	return FALSE;
+
+
+}
+*/
+static void getExpression(expressionS* ep, char* str){
+	char* save_in;
+	save_in = input_line_pointer;
+	input_line_pointer = str;
+	expression(ep);
+	expr_end = input_line_pointer;
+	input_line_pointer = save_in;
+
+#ifdef DEBUG
+	/*Printing out what kind of expression*/
+	if(ep->X_op == O_constant){
+		as_warn(_("Expression is O_constant"));
+	} else if(ep->X_op == O_symbol){
+		as_warn(_("Expression is O_symbol"));
+	} else if(ep->X_op == O_register){
+		as_warn(_("Expression is O_symbol"));
+	} else if(ep->X_op == O_big){
+		as_warn(_("Expression is O_big"));
+	} else if(ep->X_op == O_illegal){
+		as_warn(_("Expression is O_illegal"));
+	}
+#endif
+
+
+}
+/*
+static size_t getSmallExpression(expressionS* ep, bfd_reloc_code_real_type* reloc,
+				char* str, const struct percent_op_match *percent_op){
+	size_t	reloc_index;
+	unsigned crux_depth, str_depth;
+	int regno;
+	char* crux;
+	
+	//if(reg_lookup (&str, REGF_GPR, &regno)){
+	regno = parse_register_operand(&str);
+	if( regno != -1 ){
+		ep->X_op = O_register;
+		ep->X_add_number = regno;
+		return 0;
+	}
+	reloc_index = -1;
+	str_depth = 0;
+	do {
+		reloc_index++;
+		crux = str;
+		crux_depth = str_depth;
+*/
+			/*skip whitespace and brackets, keep count of bracket number*/
+/*
+		while(*str==' ' || *str == '\t' || *str == '(')
+			if(*str++ == '(')
+				str_depth++;
+	}while(* str == '%' && reloc_index < 1 && parse_relocation(&str, reloc, percent_op));
+
+	getExpression(ep, crux);
+	str = expr_end;
+	while(crux_depth > 0 && (*str == ')' || *str == ' ' || *str == '\t'))
+		if(*str++ == ')')
+			crux_depth--;
+	if(crux_depth > 0)
+		as_bad("missing ')'");
+}
+*/
+/*Parse expression, then restore input line pointer*/
+
+/*
+static char* parse_exp_save_ilp(char *s, expressionS* op){
 	char* save = input_line_pointer;
 	input_line_pointer = s;
 	expression(op);
@@ -495,23 +730,21 @@ static char* parse_expt_save_ilp(char *s, expressionS* op){
 	return s;
 }
 */
-
-
 /*Parse register for operands*/
 static int parse_register_operand(char** ptr){
 	 int reg;
 	 char* s = *ptr;
-	SKIP_SPACE_TABS(s);	
+	 SKIP_SPACE_TABS(s);	
 	 if(*s != '$') { //denote register with $ 
 		as_bad(_("expecting register, missing '$': %s"), s);
 		ignore_rest_of_line();
 		return -1;
 	 }
-	
+			
 	//if zero register?
 	 if(    (s[1] == 'z')
-	     && (s[2] == 'e')
-	     && (s[3] == 'r')
+		 && (s[2] == 'e')
+		 && (s[3] == 'r')
 		 && (s[4] == 'o') ){
 			if( !((s[5] == ' ') || (s[5] == '\t') || (s[5] == ',') || (s[5] == ')') )){
 				as_bad(_("not a real register: %s"), s);	
@@ -528,7 +761,7 @@ static int parse_register_operand(char** ptr){
 			if( !((s[3] == ' ') || (s[3] == '\t') || (s[3] == ',')) ){
 				as_bad(_("not a real register: %s"), s);	
 			}
-	 		*ptr += 3;
+			*ptr += 3;
 			return 2;
 	 } else if( (s[1] == 'g') && (s[2] == 'p')) {
 			if(! ( (s[3] == ' ') || (s[3] == '\t') || (s[3] = ',')) ){
@@ -560,7 +793,7 @@ static int parse_register_operand(char** ptr){
 			if( !((s[6] == ' ') || (s[6] == '\t') || (s[6] == ',')) ){
 				as_bad(_("not a real register: %s"), s);	
 			}
-	 	reg = s[5] - '0';
+		reg = s[5] - '0';
 		if( (reg < 0) || (reg >1) ){
 			as_bad(_("illegal return value regsiter"));
 			ignore_rest_of_line();
@@ -569,7 +802,7 @@ static int parse_register_operand(char** ptr){
 			*ptr += 6;
 			return reg + 9; //regs 9 and 10
 		}
-	 
+				 
 	 } else if ( (s[1] == 'g') && (s[2] == 'r')){
 		reg = s[3] - '0'; 
 		if( (reg < 0) || (reg > 9) ){
@@ -593,7 +826,7 @@ static int parse_register_operand(char** ptr){
 			}
 		}
 	 
-	 
+			 
 	 } else if ( (s[1] == 't') && (s[2] == 'm') 
 				&& (s[3] == 'p')  ){
 			if( !((s[4] == ' ') || (s[4] == '\t') || (s[4] == ',')) ){
@@ -608,19 +841,19 @@ static int parse_register_operand(char** ptr){
 			*ptr += 5;
 			return reg + 22; //tmp0 is R22
 		}
-	 
+			 
 	 } else if( (s[1] == 'h') && (s[2] == 'i') && (s[3] == '0')){
 			if( !((s[4] == ' ') || (s[4] == '\t') || (s[4] == ',')) ){
 				as_bad(_("not a real register: %s"), s);	
 			}
-	 	*ptr += 3;
+		*ptr += 3;
 		return 30; //HI0 is R30
 	 } else if( (s[1] == 'l') && (s[2] == 'o') && (s[3] == 'w')
 					 && (s[4] == '0')){
 			if( !((s[5] == ' ') || (s[5] == '\t') || (s[5] == ',')) ){
 				as_bad(_("not a real register: %s"), s);	
 			}
-	 	*ptr += 5;
+		*ptr += 5;
 		return 31; //LOW0 is R31
 	 } else {
 			as_bad(_("expecting register, unknown operand:%s"),*ptr);	
@@ -637,7 +870,7 @@ int parse_rdab( int* rd, int* rsa, int* rsb, char* op_end){
 
 	//skipping spaces
 	while( (*op_end == ' ') || (*op_end == '\t') )
-	       op_end++;	
+		   op_end++;	
 
 	*rd = parse_register_operand(&op_end);
 	if(*op_end != ','){
@@ -672,7 +905,7 @@ int parse_rda( int* rd, int* rsa, char* op_end){
 
 	//skipping spaces
 	while( (*op_end == ' ') || (*op_end == '\t') )
-	       op_end++;	
+		   op_end++;	
 
 	*rd = parse_register_operand(&op_end);
 	if(*op_end != ','){
@@ -685,7 +918,7 @@ int parse_rda( int* rd, int* rsa, char* op_end){
 		op_end++;
 
 	*rsa = parse_register_operand(&op_end);
-	
+			
 	while( (*op_end == ' ') || (*op_end == '\t'))
 		op_end++;
 	if(*op_end != '\0')
@@ -698,7 +931,7 @@ int parse_rab( int* rsa, int* rsb, char* op_end){
 
 	//skipping spaces
 	while( (*op_end == ' ') || (*op_end == '\t') )
-	       op_end++;	
+		   op_end++;	
 
 	*rsa = parse_register_operand(&op_end);
 	if(*op_end != ','){
@@ -723,283 +956,386 @@ int parse_rab( int* rsa, int* rsb, char* op_end){
 	return 0;
 } 
 
-int parse_imm( int* imm, char* op_end){
+int parse_imm( int* imm, char** op_end, expressionS* imm_expr, bfd_reloc_code_real_type reloc, struct fusion_cl_insn* ip){
 
-	//expressionS arg;
-
-	//skipping spaces
-	while( (*op_end == ' ') || (*op_end == '\t') )
-	       op_end++;	
-	*imm = 0x00;
-
+	while( (**op_end == ' ') || (**op_end == '\t') )
+		   op_end++;
+//	expressionS arg;
+	//*op_end = parse_exp_save_ilp(*op_end, &arg);	
+	//*op_end = getSmallExpression(imm_expr, imm_reloc, op_end);
+//	if(reloc == BFD_RELOC_UNUSED){
+		getExpression(imm_expr, *op_end);
+//	} else {
+		//getSmallExpression(imm_expr, &reloc, *op_end);
+//	}
+	char* where;
+	where = frag_more(WORST_CASE);
+	switch(reloc){
+			//finding if pc relative
+		case BFD_RELOC_FUSION_14_PCREL:
+				/*fallthru*/
+		case BFD_RELOC_FUSION_21_PCREL:
+			
+			ip->fixptr = fix_new_exp(frag_now,
+							(where - frag_now->fr_literal),
+							WORST_CASE,
+							imm_expr,
+							TRUE,
+							reloc);		
+			break;
+		case BFD_RELOC_32:
+		case BFD_RELOC_16:
+		case BFD_RELOC_FUSION_HI16:
+		case BFD_RELOC_8:
+		case BFD_RELOC_FUSION_LOAD:
+		case BFD_RELOC_FUSION_STORE:
+		case BFD_RELOC_FUSION_12:
+		if( imm_expr->X_op != O_constant ){
+	//		as_fatal(_("Immediate is not constant: %lx"),(unsigned long)imm_expr->X_add_number);
+	//		break;
+		}
+			ip->fixptr = fix_new_exp(frag_now,
+							(where - frag_now->fr_literal),
+							WORST_CASE,
+							imm_expr,
+							FALSE,
+							reloc);		
+			break;
+		case BFD_RELOC_NONE:
+			break;
+		default:
+			as_bad(_("not recognized relocation: %d"), reloc);
+			abort();
+	
+	}	
+	*imm = imm_expr->X_add_number;
 	return 0;
 } 
 
-int parse_rdai( int* rd, int* rsa, int* imm,  char* op_end){
+int parse_rdai( int* rd, int* rsa, int* imm,  char** op_end, expressionS* imm_expr, bfd_reloc_code_real_type reloc, struct fusion_cl_insn* ip){
 
 	//skipping spaces
-	while( (*op_end == ' ') || (*op_end == '\t') )
-	       op_end++;	
+	while( (**op_end == ' ') || (**op_end == '\t') )
+		   (*op_end)++;	
 
-	*rd = parse_register_operand(&op_end);
-	if(*op_end != ','){
+	*rd = parse_register_operand(op_end);
+	if(**op_end != ','){
 		as_warn(_("expecting comma deliminated operands"));
 	}
-	op_end++;
+	(*op_end)++;
 
 	//get rid of spaces and tabs
-	while( (*op_end == ' ') || (*op_end == '\t'))
-		op_end++;
+	while( (**op_end == ' ') || (**op_end == '\t'))
+		(*op_end)++;
 
-	*rsa = parse_register_operand(&op_end);
-	if(*op_end != ','){
+	*rsa = parse_register_operand(op_end);
+	if(**op_end != ','){
 		as_warn(_("expecting comma deliminated operands"));
 	}
-	op_end++;
-	while( (*op_end == ' ') || (*op_end == '\t'))
-		op_end++;
+	(*op_end)++;
+	while( (**op_end == ' ') || (**op_end == '\t'))
+		(*op_end)++;
 
-	parse_imm(imm, op_end);
-	if(*op_end != '\0')
-		as_warn(_("ignored rest of line: %s"), op_end);
+	parse_imm(imm, op_end, imm_expr, reloc, ip);
+	while( (**op_end == ' ') || (**op_end == '\t'))
+		(*op_end)++;
+	if(**op_end != '\0')
+		as_warn(_("ignored rest of line: %s"), *op_end);
 	return 0;
 } 
-int parse_rdi(int* rd, int* imm, char* op_end){
+int parse_rdi(int* rd, int* imm, char** op_end, expressionS* imm_expr, bfd_reloc_code_real_type reloc, struct fusion_cl_insn* ip){
 	//skipping spaces
-	while( (*op_end == ' ') || (*op_end == '\t') )
-	       op_end++;	
+	while( (**op_end == ' ') || (**op_end == '\t') )
+		   (*op_end)++;	
 
-	*rd = parse_register_operand(&op_end);
-	if(*op_end != ','){
+	*rd = parse_register_operand(op_end);
+	if(**op_end != ','){
 		as_warn(_("expecting comma deliminated registers"));
 	}
-	op_end++;
+	(*op_end)++;
 
 	//get rid of spaces and tabs
-	while( (*op_end == ' ') || (*op_end == '\t'))
-		op_end++;
-	parse_imm(imm, op_end);
-	if(*op_end != '\0')
-		as_warn(_("ignored rest of line: %s"), op_end);
+	while( (**op_end == ' ') || (**op_end == '\t'))
+		(*op_end)++;
+	parse_imm(imm, op_end, imm_expr, reloc, ip);
+	while( (**op_end == ' ') || (**op_end == '\t'))
+		(*op_end)++;
+	if(**op_end != '\0')
+		as_warn(_("ignored rest of line: %s"), *op_end);
 	return 0;
 
 }
-int parse_rai(int *rsa, int* imm, char* op_end){
+int parse_rai(int *rsa, int* imm, char** op_end, expressionS* imm_expr, bfd_reloc_code_real_type reloc, struct fusion_cl_insn* ip){
 	//skipping spaces
-	while( (*op_end == ' ') || (*op_end == '\t') )
-	       op_end++;	
+	while( (**op_end == ' ') || (**op_end == '\t') )
+		   (*op_end)++;	
 
-	*rsa = parse_register_operand(&op_end);
-	if(*op_end != ','){
+	*rsa = parse_register_operand(op_end);
+	if(**op_end != ','){
 		as_warn(_("expecting comma deliminated registers"));
 	}
-	op_end++;
+	(*op_end)++;
 
 	//get rid of spaces and tabs
-	while( (*op_end == ' ') || (*op_end == '\t'))
-		op_end++;
-	parse_imm(imm, op_end);
-	if(*op_end != '\0')
-		as_warn(_("ignored rest of line: %s"), op_end);
+	while( (**op_end == ' ') || (**op_end == '\t'))
+		(*op_end)++;
+	parse_imm(imm, op_end, imm_expr, reloc, ip);
+	while( (**op_end == ' ') || (**op_end == '\t'))
+		(*op_end)++;
+	if(**op_end != '\0')
+		as_warn(_("ignored rest of line: %s"), *op_end);
 	return 0;
 }
-int parse_rabi(int* rsa, int* rsb, int* imm, char* op_end){
+int parse_rabi(int* rsa, int* rsb, int* imm, char** op_end, expressionS* imm_expr, bfd_reloc_code_real_type reloc, struct fusion_cl_insn* ip){
 	//skipping spaces
-	while( (*op_end == ' ') || (*op_end == '\t') )
-	       op_end++;	
+	while( (**op_end == ' ') || (**op_end == '\t') )
+		   (*op_end)++;	
 
-	*rsa = parse_register_operand(&op_end);
-	if(*op_end != ','){
+	*rsa = parse_register_operand(op_end);
+	if(**op_end != ','){
 		as_warn(_("expecting comma deliminated registers"));
 	}
-	op_end++;
+	(*op_end)++;
 
-	*rsb = parse_register_operand(&op_end);
-	if(*op_end != ','){
+	*rsb = parse_register_operand(op_end);
+	if(**op_end != ','){
 		as_warn(_("expecting comma deliminated registers"));
 	}
-	op_end++;
+	(*op_end)++;
 
 	//get rid of spaces and tabs
-	while( (*op_end == ' ') || (*op_end == '\t'))
-		op_end++;
-	parse_imm(imm, op_end);
-	if(*op_end != '\0')
-		as_warn(_("ignored rest of line: %s"), op_end);
+	while( (**op_end == ' ') || (**op_end == '\t'))
+		(*op_end)++;
+	parse_imm(imm, op_end, imm_expr, reloc, ip);
+	while( (**op_end == ' ') || (**op_end == '\t'))
+		(*op_end)++;
+	if(**op_end != '\0')
+		as_warn(_("ignored rest of line: %s"), *op_end);
 	return 0;
 }
 
-int parse_rdai_offset( int* rd, int* rsa, int* imm,  char* op_end){
+int parse_rdai_offset( int* rd, int* rsa, int* imm,  char** op_end, expressionS* imm_expr, bfd_reloc_code_real_type reloc, struct fusion_cl_insn* ip){
 
 	//skipping spaces
-	while( (*op_end == ' ') || (*op_end == '\t') )
-	       op_end++;	
+	while( (**op_end == ' ') || (**op_end == '\t') )
+		   (*op_end)++;	
 
-	*rd = parse_register_operand(&op_end);
-	if(*op_end != ','){
+	*rd = parse_register_operand(op_end);
+	if(**op_end != ','){
 		as_warn(_("expecting comma deliminated operands"));
 	}
-	op_end++;
+	(*op_end)++;
 
 	//get rid of spaces and tabs
-	while( (*op_end == ' ') || (*op_end == '\t'))
-		op_end++;
+	while( (**op_end == ' ') || (**op_end == '\t'))
+		(*op_end)++;
 
-	parse_imm(imm, op_end);
-	while( (*op_end != '(')){
-		if(*op_end == '\0'){
-			as_bad(_("expecting `(' before end: %s"), op_end);
+	parse_imm(imm, op_end, imm_expr, reloc, ip);
+	while( (**op_end != '(')){
+		if(**op_end == '\0'){
+			as_bad(_("expecting `(' before end: %s"), *op_end);
 			return -1;
 		}
-		op_end++;
+		(*op_end)++;
 	}
-	op_end++;
-	*rsa = parse_register_operand(&op_end);
-	op_end++;
+	(*op_end)++;
+	*rsa = parse_register_operand(op_end);
+	(*op_end)++;
 
 	//SKIP_SPACE_TABS(op_end);
 
 	//if(*op_end != ')'){
 	//	as_bad(_("expecting `)' after register: %s"), op_end);
 	//}
-	while( (*op_end == ' ') || (*op_end == '\t') || (*op_end == ')'))
-		op_end++;
+	while( (**op_end == ' ') || (**op_end == '\t') || (**op_end == ')'))
+		(*op_end)++;
 
-	if(*op_end != '\0')
-		as_warn(_("ignored rest of line: %s"), op_end);
+	if(**op_end != '\0')
+		as_warn(_("ignored rest of line: %s"), *op_end);
 	return 0;
 } 
 
-int parse_rai_offset(int *rsa, int* imm, char* op_end){
+int parse_rai_offset(int *rsa, int* imm, char** op_end, expressionS* imm_expr, bfd_reloc_code_real_type reloc, struct fusion_cl_insn* ip){
 	//get rid of spaces and tabs
-	while( (*op_end == ' ') || (*op_end == '\t'))
+	while( (**op_end == ' ') || (**op_end == '\t'))
 		op_end++;
 
-	parse_imm(imm, op_end);
-	while( (*op_end != '(')){
-		if(*op_end == '\0'){
+	parse_imm(imm, op_end, imm_expr, reloc, ip);
+	while( (**op_end != '(')){
+		if(**op_end == '\0'){
 			as_bad(_("xpecting `(' before end"));
 			return -1;
 		}
-		op_end++;
+		(*op_end)++;
 	}
-	op_end++;
-	*rsa = parse_register_operand(&op_end);
-	op_end++;
+	(*op_end)++;
+	*rsa = parse_register_operand(op_end);
+	(*op_end)++;
 //	if(*op_end != ')'){
 //		as_bad(_("expecting `)' after register: %s"), op_end);
 //	}
-	while( (*op_end == ' ') || (*op_end == '\t') || (*op_end == ')'))
-		op_end++;
+	while( (**op_end == ' ') || (**op_end == '\t') || (**op_end == ')'))
+		(*op_end)++;
 
-	if(*op_end != '\0')
-		as_warn(_("ignored rest of line: %s"), op_end);
+	if(**op_end != '\0')
+		as_warn(_("ignored rest of line: %s"), *op_end);
 	return 0;
 }
-int parse_rabi_offset(int* rsa, int* rsb, int* imm, char* op_end){
+int parse_rabi_offset(int* rsa, int* rsb, int* imm, char** op_end, expressionS* imm_expr, bfd_reloc_code_real_type reloc, struct fusion_cl_insn* ip){
 		//skipping spaces
-	while( (*op_end == ' ') || (*op_end == '\t') )
-	       op_end++;	
+	while( (**op_end == ' ') || (**op_end == '\t') )
+		   (*op_end)++;	
 
-	*rsa = parse_register_operand(&op_end);
-	if(*op_end != ','){
+	*rsa = parse_register_operand(op_end);
+	if(**op_end != ','){
 		as_warn(_("expecting comma deliminated operands"));
 	}
-	op_end++;
+	(*op_end)++;
 
 	//get rid of spaces and tabs
-	while( (*op_end == ' ') || (*op_end == '\t'))
-		op_end++;
+	while( (**op_end == ' ') || (**op_end == '\t'))
+		(*op_end)++;
 
-	parse_imm(imm, op_end);
-	while( (*op_end != '(')){
-		if(*op_end == '\0'){
+	parse_imm(imm, op_end, imm_expr, reloc, ip);
+	while( (**op_end != '(')){
+		if(**op_end == '\0'){
 			as_bad(_("expecting `(' before end"));
 			return -1;
 		}
-		op_end++;
+		(*op_end)++;
 	}
-	op_end++;
-	*rsb = parse_register_operand(&op_end);
-	op_end++;
+	(*op_end)++;
+	*rsb = parse_register_operand(op_end);
+	(*op_end)++;
 //	if(*op_end != ')'){
 //		as_bad(_("expecting `)' after register: %s"), op_end);
 //	}
-	while( (*op_end == ' ') || (*op_end == '\t') || (*op_end == ')'))
-		op_end++;
+	while( (**op_end == ' ') || (**op_end == '\t') || (**op_end == ')'))
+		(*op_end)++;
 
-	if(*op_end != '\0')
-		as_warn(_("ignored rest of line: %s"), op_end);
+	if(**op_end != '\0')
+		as_warn(_("ignored rest of line: %s"), *op_end);
 	return 0;	
 }
 
 
-/* output instruction
- * ip: instruction information
- * address_expr: operand of instruciton to be used with reloc_type
- * expansionp: true if instruction is part of macro expansion*/
-/*
-static void append_insn(struct fusion_cl_insn* ip, expressionS* address_expr,
-		bfd_reloc_code_real_type* reloc_type, bfd_bolean expansionp){
-
-	bfd_boolean relaxed_branch = FALSE;
-	enum append_method method;
-	bfd_boolean relax32;
-	int branch_disp;
-
-
-
-
-}
-*/
-
 /*
 static const char* fusion_ip(char *str, struct fusion_cl_insn* ip, 
-		expressionS* imm_expr, bfd_reloc_code_real_type* imm_reloc){
+	expressionS* imm_expr, bfd_reloc_code_real_type* imm_reloc){
 	char* s;
 	const char* args;
 	char c = 0;
 	struct fusion_opc_info_t* insn;
 	char* argsStart;
-	insigned int regno;
+	unsigned int regno;
+	const struct percent_op_match *p;
+	const char* errpor = "unrecognized instruction";
 
 
 
 }
-
 */
 
+/*determines relocation based off of opcode*/
+bfd_reloc_code_real_type return_reloc(fusion_opc_info_t* insn, char* str){
+	/*get opcode*/
+	insn_t opc = insn->opc;
+	
+	bfd_reloc_code_real_type ret_reloc = BFD_RELOC_UNUSED;
 
+	/*Determine which instruction kind*/
+	switch(opc){
+		/*Integer Instructions*/
+		case OPC_INT:
+			break;
+		/*Immediate Instructions*/
+		case OPC_IMM:
+			ret_reloc = BFD_RELOC_FUSION_12;
+			break;
+		/*Load Instructions*/
+		case OPC_LD:
+					ret_reloc = BFD_RELOC_FUSION_LOAD;
+			break;
+		/*Store Instructions*/	
+		case OPC_ST:
+			ret_reloc = BFD_RELOC_FUSION_STORE;
+			break;	
+		/*Load Immeidate Instructions*/
+		case OPC_LI:
+			ret_reloc = BFD_RELOC_16;
+			break;
+		/*Jump Instruction*/
+		case OPC_JMP:
+			ret_reloc = BFD_RELOC_FUSION_21_PCREL;
+			break;
+		/*Jump Link Instruction*/
+		case OPC_JLNK:
+			ret_reloc = BFD_RELOC_FUSION_21_PCREL;
+			break;
+		/*Branch Instructions*/
+		case OPC_BRANCH:
+			ret_reloc = BFD_RELOC_FUSION_14_PCREL;
+			break;
+		/*System Instrucitons*/
+		case OPC_SYS:
+			if(insn->imm_mask == MASK_NO_IMM) //if no imm, no reloc
+					break;
+			ret_reloc = BFD_RELOC_8;
+			break;
+		case 0x00:
+			break;
+		/*Unknown Instructions*/
+		default:
+			as_bad(_("Unknown opcode, how did you manage that?: %s"), str);
+			break;
+			
+	}
+	return ret_reloc;
+}
 
 /*Turns instruction into binary
+ * p: relocation info things
  * str: input from stream for getting assembly info
  * insn: struct values to grab
  * insn_bin: binary value to get
  * returns FALSE if can't assemble*/
-bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t* insn, insn_t* insn_bin){
+//bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t* insn, insn_t* insn_bin){
+bfd_boolean assemble_insn_bin(char* str, struct fusion_cl_insn* ip, expressionS* imm_expr,
+						bfd_reloc_code_real_type* imm_reloc){
+
+	fusion_opc_info_t* insn = (fusion_opc_info_t*)ip->insn_mo;
+	imm_expr->X_op = O_absent;
+	*imm_reloc = BFD_RELOC_UNUSED;
+
 	unsigned cpid_value = insn->cpid; //get CPID value
 	insn_t opc = insn-> opc; //get opcode
 	unsigned args;
 	char* op_start = str;
 	char* op_end = str;
-	
-	if( (cpid_value) > 0){
+//	char* p = ;
+	/*Get relocation based off of instruction opcode*/
+	bfd_reloc_code_real_type reloc = return_reloc( insn, str );
+	*imm_reloc = reloc;
+	if( (cpid_value) > CPID_MAX){
 		as_bad(_("Unknown co-processor instruction: %s"), op_start);
 		return FALSE;
 	} else if(cpid_value == CPID_MAIN){ //if for main processor
-	
+		
 	args = insn->args; //operands for instruction	
 
 	if( (args > MAX_USE_OP) ){
 		as_bad(_("Incorrect arguments, what did you do? insn: %s"), op_start);
 		return FALSE;
 	}
-	
+
+
+			
 	//operand values
 	int Rd = 0;  //Destination Register
 	int RSa = 0; //Source A register
 	int RSb = 0; //Source B register
 	int imm = 0; //Immediate value
+	
 
 	insn_t imm_mask = insn->imm_mask;	
 	if(imm_mask == MASK_NO_IMM){
@@ -1011,7 +1347,7 @@ bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t* insn, insn_t* insn_b
 				if(*op_end != '\0')
 					as_warn(_("ignored rest of line: %s"), op_end);
 				break;
-	
+			
 			case USE_RDAB:
 				parse_rdab( &Rd, &RSa, &RSb, op_end);
 				break;
@@ -1026,38 +1362,38 @@ bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t* insn, insn_t* insn_b
 			default:
 				break;
 
-		
+				
 		} 
-			if( (Rd == -1) || (RSa == -1) || (RSb == -1) ){
-				as_bad(_("unknown register used %s"), op_start);	
-				return FALSE;
-				}
+	if( (Rd == -1) || (RSa == -1) || (RSb == -1) ){
+		as_bad(_("unknown register used %s"), op_start);	
+		return FALSE;
+	}
 
 	} else { //instructions use immediate values
 			switch(args){
 				case USE_RDAI:
-					parse_rdai( &Rd, &RSa, &imm, op_end);
+					parse_rdai( &Rd, &RSa, &imm, &op_end, imm_expr, reloc, ip);
 					break;	
 				case USE_RDI:
-					parse_rdi( &Rd, &imm, op_end);
+					parse_rdi( &Rd, &imm, &op_end, imm_expr, reloc, ip);
 					break;
 				case USE_RAI:
-					parse_rai( &RSa, &imm, op_end);
+					parse_rai( &RSa, &imm, &op_end, imm_expr, reloc, ip);
 					break;
 				case USE_RABI:
-					parse_rabi( &RSa, &RSb, &imm, op_end);
+					parse_rabi( &RSa, &RSb, &imm, &op_end, imm_expr, reloc, ip);
 					break;
 				case USE_RDAI_O:
-					parse_rdai_offset( &Rd, &RSa, &imm, op_end);
+					parse_rdai_offset( &Rd, &RSa, &imm, &op_end, imm_expr, reloc, ip);
 					break;
 				case USE_RAI_O:
-					parse_rai_offset( &RSa, &imm, op_end);
+					parse_rai_offset( &RSa, &imm, &op_end, imm_expr, reloc, ip);
 					break;
 				case USE_RABI_O:
-					parse_rabi_offset( &RSa, &RSb, &imm, op_end);
+					parse_rabi_offset( &RSa, &RSb, &imm, &op_end, imm_expr, reloc, ip);
 					break;
 				case USE_I:
-					parse_imm( &imm, op_end);
+					parse_imm( &imm, &op_end, imm_expr, reloc, ip);
 					while( (*op_end == ' ') || (*op_end == '\t'))
 						op_end++;
 					if(*op_end != '\0')
@@ -1074,60 +1410,55 @@ bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t* insn, insn_t* insn_b
 			switch(opc){
 				/*Integer Instructions*/
 				case OPC_INT:
-				*insn_bin = MAKE_R_TYPE(Rd, RSa, RSb, 0, insn->index );
+			//		imm_expr->X_op = O_absent;
+					ip->insn_word = MAKE_R_TYPE(Rd, RSa, RSb, 0, insn->index );
 					break;
 				/*Immediate Instructions*/
 				case OPC_IMM:
-					as_warn(_("immediate instructions not implemented yet: %s"), op_start);
-					*insn_bin = MAKE_I_TYPE(Rd, RSa, imm , insn->index);
+					//check_absolute_expr(ip, imm_expr);
+			//		imm_expr->X_op = O_constant;
+					ip->insn_word = MAKE_I_TYPE(Rd, RSa, imm , insn->index);
 					break;
 				/*Load Instructions*/
 				case OPC_LD:
-					as_warn(_("immediate instructions not implemented yet: %s"), op_start);
-					*insn_bin = MAKE_L_TYPE(Rd, RSa, insn->index, imm);
+					ip->insn_word = MAKE_L_TYPE(Rd, RSa, insn->index, imm);
 					break;
 				/*Store Instructions*/	
 				case OPC_ST:
-					as_warn(_("immediate instructions not implemented yet: %s"), op_start);
-					*insn_bin = MAKE_S_TYPE(insn->index, RSa, RSb, imm);
+					 ip->insn_word = MAKE_S_TYPE(insn->index, RSa, RSb, imm);
 					break;	
 				/*Load Immeidate Instructions*/
 				case OPC_LI:
-					as_warn(_("immediate instructions not implemented yet: %s"), op_start);
-					*insn_bin = MAKE_LI_TYPE(Rd, insn->index, imm);
+					//check_absolute_expr(ip, imm_expr);
+					ip->insn_word = MAKE_LI_TYPE(Rd, insn->index, imm);
 					break;
 				/*Jump Instruction*/
 				case OPC_JMP:
-					as_warn(_("immediate instructions not implemented yet: %s"), op_start);		
-					*insn_bin = MAKE_J_TYPE(RSa, imm);
-					as_warn(_("making jmp insn: %x"), *insn_bin);
+					ip->insn_word = MAKE_J_TYPE(RSa, imm);
 					break;
 				/*Jump Link Instruction*/
 				case OPC_JLNK:
-					as_warn(_("immediate instructions not implemented yet: %s"), op_start);
-					*insn_bin = MAKE_JL_TYPE(RSa, imm);
-					as_warn(_("making jlnk insn: %x"), *insn_bin);
+					ip->insn_word = MAKE_JL_TYPE(RSa, imm);
 					break;
 				/*Branch Instructions*/
 				case OPC_BRANCH:
-					as_warn(_("immediate instructions not implemented yet: %s"), op_start);
-					*insn_bin = MAKE_B_TYPE(RSa, RSb, imm, insn->index);
+					ip->insn_word = MAKE_B_TYPE(RSa, RSb, imm, insn->index);
 					break;
 				/*System Instrucitons*/
 				case OPC_SYS:
-					as_warn(_("immediate instructions not implemented yet: %s"), op_start);
-					*insn_bin = MAKE_SYS_TYPE(Rd, RSa, insn->index, imm);
+					check_absolute_expr(ip, imm_expr);
+					ip->insn_word = MAKE_SYS_TYPE(Rd, RSa, insn->index, imm);
 					break;
 				case 0x00:
-					*insn_bin = 0x00000000; //since nop
+					ip->insn_word = 0x00000000; //since nop
 					break;
 				/*Unknown Instructions*/
 				default:
 					as_bad(_("Unknown opcode, \
 						how did you manage that?: %s"), op_start);
-					*insn_bin = 0x00000000;
+					ip->insn_word = 0x00000000;
 					break;
-			
+					
 			}
 			} else{
 				as_bad (_("No co-processor instructions exist yet, don't know \
@@ -1140,146 +1471,73 @@ bfd_boolean assemble_insn_bin(char* str, fusion_opc_info_t* insn, insn_t* insn_b
 
 
 
-		void md_assemble(char* str){
-			char* op_start;
-			char* op_end;
+void md_assemble(char* str){
+	char* op_start;
+	char* op_end;
 
-			fusion_opc_info_t *insn;
-			char* p;
-			char pend;
-			
-			insn_t iword = 0;
-			int nlen = 0;
 
-			SKIP_SPACE_TABS(str);
+	fusion_opc_info_t *insn;
+	struct fusion_cl_insn ip;
+	//char* p;
+	char pend;
+				
+	//insn_t iword = 0;
+	int nlen = 0;
 
-			op_start = str;
+	SKIP_SPACE_TABS(str);
 
-			/* Finding op code end*/
-			for(op_end = str; *op_end && !is_end_of_line[*op_end & 0xff] && *op_end != ' ';
-					op_end++)
-				nlen++;
+	op_start = str;
+	expressionS imm_expr;
+	bfd_reloc_code_real_type imm_reloc;
 
-			pend = *op_end;
-			*op_end = 0;
+	/* Finding op code end*/
+	for(op_end = str; *op_end && !is_end_of_line[*op_end & 0xff] && *op_end != ' '; op_end++)
+		nlen++;
 
-			if(nlen == 0){
-				as_bad (_("couldn't find instruction"));
-			}
-			insn = (fusion_opc_info_t *)hash_find(op_hash_ctrl, op_start);
-			/*fix hash if incorrect instruction found; happens for jumps?*/
- 
-			*op_end = pend;
-			if(insn == NULL){
-				as_bad(_("Unknown instruction: %s"), op_start);
-				return;
-			}
-			p = frag_more(4);
-	bfd_boolean assemble_success = assemble_insn_bin(op_end, insn, &iword);
+	pend = *op_end;
+	*op_end = 0;
+
+	if(nlen == 0){
+		as_bad (_("couldn't find instruction"));
+	}
+	insn = (fusion_opc_info_t *)hash_find(op_hash_ctrl, op_start);
+	/*fix hash if incorrect instruction found; happens for jumps?*/
+	*op_end = pend;
+	if(insn == NULL){
+		as_bad(_("Unknown instruction: %s"), op_start);
+		return;
+	}
+	create_insn(&ip, insn);
+	bfd_boolean assemble_success = assemble_insn_bin(op_end, &ip, &imm_expr, &imm_reloc);
 	/*Make sure assembly is done properly*/	
 	if( !assemble_success ){
 		as_bad(_("Couldn't assemble instruction:%s"), op_start);
 		return;
 	}
+	if(ip.insn_mo->cpid == CPID_MACRO){
+		macro(&ip, &imm_expr, &imm_reloc);
+	} else if(ip.insn_mo->cpid == CPID_MAIN){
+		append_insn(&ip, &imm_expr, imm_reloc);
+	}else{
+		as_fatal(_("Unimplemented CPID"));
+		return;
+	}
 
-	md_number_to_chars(p, iword, 4);
-	dwarf2_emit_insn(0);
-	while(ISSPACE(*op_end))
-			op_end++;
+
+//	md_number_to_chars(p, iword, 4);
+//	dwarf2_emit_insn(4);
+//	while(ISSPACE(*op_end))
+//			op_end++;
 //	if(*op_end != 0)
 //		as_warn(_("rest of line ignored; clean yo shit"));
 	if(pending_reloc)
 		as_warn(_("something forgot to clean up ooooooh\n"));
-	
+	return;	
 }
-
-/* move all labels in 'labels' to current insertion point
- * text_p states whether dealing with text or data segments*/
-/*
-static void fusion_move_labels(struct insn_label_list* labels, 
-		bfd_boolean text_p){
-	struct insn_label_list* l;
-	valueT val;
-
-	for(l = labels; l != NULL; l = l-> next){
-		gas_assert(S_GET_SEGMENT (l->label) == now_seg);
-		symbol_set_frag(l->label, frag_now);
-		val = (valueT) frag_now_fix();
-		S_SET_VALUE(l->label, val);
-	}
-
-}
-*/
-/* move all labels in insn_labels to current insertion point
- * treat them as text labels*/
-/*
-static void fusion_move_text_labels(void){
-	fusion_move_labels(seg_info(now_seg)->label_list, TRUE);
-}
-*/
-/*end current fragment. make it a varient fragment and record the relaxation
- * info*/
-//static void relax_close_frag(void){
-//}
-
-//static void relax_start(symbolS* symbol){
-//	gas_assert(fusion_relax.sequence == 0);
-//	fusion_relax.sequence = 1;
-//	fusion_relax.symbol = symbol;
-//}
-//static void relax_end(void){
-//	gas_assert(fusion_relax.sequence == 2);
-//	relax_close_frag();
-//	fusion_relax.sequence = 0;
-//}
-
-/*determine if branch*/
-/*
-static enum branch_p(fuion_cl_insn* ip){
-	return(ip->insn_mo->opc & (OPC_BRANCH));
-}
-*/
-
-/*figure out how to add IP to instruction stream*/
-/*
-static enum append_method get_append_method(struct fusion_cl_insn* ip,
-			expressionS* address_expr, 
-			bfd_reloc_code_real_type* reloc_type){
-	if(branch_p(ip)){
-		return APPEND_NOP;
-	}
-
-	return APPEND_NORMAL;
-
-
-}
-*/
-
-/* try to resolve relocation, reloc, against constant operand at assembly time
- * return true on success, storing resolved value in result*/
-//static bfd_boolean calculate_reloc(bfd_reloc_code_real_type reloc, 
-//		offsetT operand, offsetT* result){
-//	switch(reloc){
-//		case BFD_RELOC_FUSION_14_PCREL:
-//			*result = ((operand + 0x8000) >> 14) & 0xffff;
-//			return TRUE;
-//		case BFD_RELOC_FUSION_21_PCREL:
-//			*result = ((operand + 0x80008000ull) >> )
-//	}
-//}
-
 
 
 const char* md_atof(int type, char* litP, int* sizeP){
 	return ieee_md_atof(type, litP, sizeP, target_big_endian);
-}
-
-void md_number_to_chars(char *buf, valueT val, int n){
-//	if(target_big_endian)
-		number_to_chars_bigendian(buf, val, n);
-//	else
-//		number_to_cahrs_littleendian(buf, val, n);
-
 }
 
 const char *md_shortopts ="";
@@ -1300,44 +1558,61 @@ void md_show_usage(FILE* stream ATTRIBUTE_UNUSED){
 	fprintf(stream, _("\nNo options available at the moment\n"));
 }
 
-void md_apply_fix(fixS *fixP ATTRIBUTE_UNUSED, valueT* valP ATTRIBUTE_UNUSED, segT seg ATTRIBUTE_UNUSED){
-	char* buf = fixP->fx_where + fixP->fx_frag->fr_literal;
-	long val = *valP;
+void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
+	bfd_byte *buf =(bfd_byte*)( fixP->fx_where + fixP->fx_frag->fr_literal );
+	//long val = *valP;
 //	long newval;
-	long max, min;
+//	long max, min;
+//	offsetT loc;
+//	segT sub_segment;
+	fixP->fx_addnumber = *valP;
 
-	max = min = 0;
+//	max = min = 0;
 	switch(fixP->fx_r_type){
-		case BFD_RELOC_32:
-				buf[0] = val >> 24;
-				buf[1] = val >> 16;
-				buf[2] = val >> 8;
-				buf[3] = val; //no shift, why would you do that?
-				buf += 4;
+			case BFD_RELOC_FUSION_HI16:
+			case BFD_RELOC_32:
+			case BFD_RELOC_16:
+			case BFD_RELOC_8:
+			case BFD_RELOC_FUSION_STORE:
+			case BFD_RELOC_FUSION_LOAD:
+			case BFD_RELOC_FUSION_12:
+				bfd_putb32( fusion_apply_const_reloc(fixP->fx_r_type, *valP) |
+					bfd_getb32(buf), buf);
+				if(fixP->fx_addsy == NULL)
+					fixP->fx_done = TRUE;
 				break;
 		case BFD_RELOC_FUSION_14_PCREL:
-			if(!val)
+			if(!*valP)
 				break;
-			if( (val < -8192) || (val < 8191) )
-					as_bad_where(fixP->fx_file, fixP->fx_line,
-									_("too large pc relative branch"));
-			//newval = md_chars_to_number(buf, 2);
+		//	if( (*valP < -8192) || (*valP < 8191) )
+		//	as_bad_where(fixP->fx_file, fixP->fx_line,
+		//					_("too large pc relative branch"));
+			if(fixP->fx_addsy){
+				bfd_vma target = S_GET_VALUE(fixP->fx_addsy) + *valP;
+				bfd_vma delta = target - md_pcrel_from(fixP);
+				bfd_putb32( bfd_getb32(buf) | GEN_B_IMM(delta), buf);
+			}
 			break;
 		case BFD_RELOC_FUSION_21_PCREL:
-			if(!val)
-				break;
-			if( (val < -1048576) || (val < 1048575) )
-					as_bad_where(fixP->fx_file, fixP->fx_line,
-									_("too large pc relative jump"));
-		//	newval = md_chars_to_number(buf, 3); //24 bit, since 21 used
-		
+			if(!*valP)
+			break;
+	//		if( (*valP < -1048576) || (*valP < 1048575) )
+	//		as_bad_where(fixP->fx_file, fixP->fx_line, _("too large pc relative jump"));
+			if(fixP->fx_addsy){
+				bfd_vma target = S_GET_VALUE(fixP->fx_addsy) + *valP;
+				bfd_vma delta = target - md_pcrel_from(fixP);
+				bfd_putb32( bfd_getb32(buf) | GEN_J_IMM(delta), buf);				
+			}
 			break;
 
 		default:
 			abort();
-
-	if( (max != 0) && ( (val < min) || (val > max) ) )
-			as_bad_where(fixP->fx_file, fixP->fx_line, _("offset out of range"));
+	if(fixP->fx_subsy != NULL){
+		as_bad_where(fixP->fx_file, fixP->fx_line,
+						_("unsupported symbol subtraction"));
+	}
+//	if( (max != 0) && ( (val < min) || (val > max) ) )
+//			as_bad_where(fixP->fx_file, fixP->fx_line, _("offset out of range"));
 	if( (fixP->fx_addsy == NULL) && fixP->fx_pcrel == 0)
 			fixP->fx_done = 1;
 	
@@ -1348,8 +1623,8 @@ arelent *tc_gen_reloc(asection* section ATTRIBUTE_UNUSED, fixS *fixp){
 	arelent* rel;
 	bfd_reloc_code_real_type r_type;
 
-	rel = xmalloc( sizeof(arelent) );
-	rel->sym_ptr_ptr = xmalloc( sizeof( asymbol* ) );
+	rel = (arelent *)xmalloc( sizeof(arelent) );
+	rel->sym_ptr_ptr = (asymbol **) xmalloc( sizeof( asymbol* ) );
 	*rel->sym_ptr_ptr= symbol_get_bfdsym(fixp->fx_addsy);
 	rel->address = fixp->fx_frag->fr_address + fixp->fx_where;
 
@@ -1367,8 +1642,31 @@ arelent *tc_gen_reloc(asection* section ATTRIBUTE_UNUSED, fixS *fixp){
 
 	return rel;
 }
+long md_pcrel_from(fixS* fixP){
+	return fixP->fx_where + fixP->fx_frag->fr_address;
+}
+/*
+long md_pcrel_from(fixS *fixP){
+	valueT addr = fixP->fx_where + fixP->fx_frag->fr_address;
+	switch(fixP->fx_r_type){
+		case BFD_RELOC_32:
+			return addr + 4;
+		case BFD_RELOC_FUSION_14_PCREL:
+		*/
+			/*offset from end of insn*/
+/*			return addr + 2 ;
+		case BFD_RELOC_FUSION_21_PCREL:
+			return addr + 3;
+		default:
+			abort();
+			return addr;
+	}
 
-
+}
+*/
+void md_number_to_chars(char* ptr, valueT use, int nbytes){
+	number_to_chars_bigendian(ptr, use, nbytes);
+}
 /*
 static valueT md_chars_to_number(char* buf, int n){
 	valueT result = 0;
@@ -1381,3 +1679,24 @@ static valueT md_chars_to_number(char* buf, int n){
 }
 */
 
+static void s_bss(int ignore ATTRIBUTE_UNUSED){
+	subseg_set(bss_section, 0);
+	demand_empty_rest_of_line();
+}
+
+/* Pseduo-op table*/
+
+static const pseudo_typeS fusion_pseudo_table[] ={
+	{"byte",	cons,		1},
+	{"half",	cons,		2},
+	{"word",	cons,		4},
+	{"bss",		s_bss,		0},
+//	{"align",	do_align,	0},
+	{NULL,		NULL,		0},
+};
+
+void fusion_pop_insert(void){
+	extern void pop_insert(const pseudo_typeS*);
+
+	pop_insert(fusion_pseudo_table);
+}

@@ -53,10 +53,95 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			0,							/*bit position*/
 			complain_overflow_dont,		/*complain on overflow*/
 			bfd_elf_generic_reloc,		/*special_function*/
-			"R_FUSION_NONE",			/*name*/
+			"R_FUSION_32",				/*name*/
+			FALSE,						/*partial_inplace*/
+			0xffffffff,					/*src_mask*/
+			0xffffffff,					/*dst_mask*/
+			FALSE),						/*pcrel_offset*/
+
+	/*Load Immediate constant relocation*/
+	HOWTO (R_FUSION_LI,					/* Type */
+			0,							/*rightshift*/
+			2,							/*size*/
+			32,							/*bit size*/
+			FALSE,						/*pc_relative*/
+			0,							/*bit position*/
+			complain_overflow_dont,		/*complain on overflow*/
+			bfd_elf_generic_reloc,		/*special_function*/
+			"R_FUSION_LI",				/*name*/
+			FALSE,						/*partial_inplace*/
+			GET_IMM_LI(MASK_IMM_LI),	/*src_mask*/
+			MASK_IMM_LI,	/*dst_mask*/
+			FALSE),						/*pcrel_offset*/
+	/*Load Upper Immediate constant relocation*/
+	HOWTO (R_FUSION_LUI,				/* Type */
+			0,							/*rightshift*/
+			2,							/*size*/
+			32,							/*bit size*/
+			FALSE,						/*pc_relative*/
+			0,							/*bit position*/
+			complain_overflow_dont,		/*complain on overflow*/
+			bfd_elf_generic_reloc,		/*special_function*/
+			"R_FUSION_LUI",				/*name*/
 			FALSE,						/*partial_inplace*/
 			0x00000000,					/*src_mask*/
-			0xffffffff,					/*dst_mask*/
+			GET_IMM_LI(MASK_IMM_LI),	/*dst_mask*/
+			FALSE),						/*pcrel_offset*/
+	/*Load Immediate PC relative relocation*/
+	HOWTO (R_FUSION_LI_PCREL,			/* Type */
+			0,							/*rightshift*/
+			2,							/*size*/
+			32,							/*bit size*/
+			FALSE,						/*pc_relative*/
+			0,							/*bit position*/
+			complain_overflow_dont,		/*complain on overflow*/
+			bfd_elf_generic_reloc,		/*special_function*/
+			"R_FUSION_LI_PCREL",		/*name*/
+			FALSE,						/*partial_inplace*/
+			0x00000000,					/*src_mask*/
+			GET_IMM_LI(MASK_IMM_LI),	/*dst_mask*/
+			TRUE),						/*pcrel_offset*/
+	/*Load Upper Immediate PC relative relocation*/
+	HOWTO (R_FUSION_LUI_PCREL,				/* Type */
+			0,							/*rightshift*/
+			2,							/*size*/
+			32,							/*bit size*/
+			FALSE,						/*pc_relative*/
+			0,							/*bit position*/
+			complain_overflow_dont,		/*complain on overflow*/
+			bfd_elf_generic_reloc,		/*special_function*/
+			"R_FUSION_LUI_PCREL",				/*name*/
+			FALSE,						/*partial_inplace*/
+			0x00000000,					/*src_mask*/
+			GET_IMM_LI(MASK_IMM_LI),	/*dst_mask*/
+			TRUE),						/*pcrel_offset*/
+	/*System constant relocation*/
+	HOWTO (R_FUSION_SYS,				/* Type */
+			0,							/*rightshift*/
+			2,							/*size*/
+			32,							/*bit size*/
+			FALSE,						/*pc_relative*/
+			0,							/*bit position*/
+			complain_overflow_dont,		/*complain on overflow*/
+			bfd_elf_generic_reloc,		/*special_function*/
+			"R_FUSION_SYS",				/*name*/
+			FALSE,						/*partial_inplace*/
+			0x00000000,					/*src_mask*/
+			GET_IMM_SYS(MASK_IMM_SYS),	/*dst_mask*/
+			FALSE),						/*pcrel_offset*/
+	/*System constant relocation*/
+	HOWTO (R_FUSION_I,					/* Type */
+			0,							/*rightshift*/
+			2,							/*size*/
+			32,							/*bit size*/
+			FALSE,						/*pc_relative*/
+			0,							/*bit position*/
+			complain_overflow_dont,		/*complain on overflow*/
+			bfd_elf_generic_reloc,		/*special_function*/
+			"R_FUSION_I",				/*name*/
+			FALSE,						/*partial_inplace*/
+			0x00000000,					/*src_mask*/
+			GET_IMM_I(MASK_IMM_I),	/*dst_mask*/
 			FALSE),						/*pcrel_offset*/
 
 	/*Local Symbol relative relocation*/
@@ -73,6 +158,38 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			0x00000000,					/*src_mask*/
 			0xffffffff,					/*dst_mask*/
 			FALSE),						/*pcrel_offset*/
+
+
+	/*14 Bit Load Relocation*/
+	HOWTO (R_FUSION_LOAD,
+			0,							/*rightshift*/
+			2,							/*size*/
+			14,							/*bit size*/
+			TRUE,						/*pc_relative*/
+			0,							/*bit position*/
+			complain_overflow_signed,	/*complain on overflow*/
+			bfd_elf_generic_reloc,		/*special_function*/
+			"R_FUSION_LOAD",			/*name*/
+			FALSE,						/*partial_inplace*/
+			0x00000000,					/*src_mask*/
+			GET_IMM_L(MASK_IMM_L),		/*dst_mask*/
+			FALSE),						/*pcrel_offset*/
+	/*14 Bit Load Relocation*/
+	HOWTO (R_FUSION_STORE,
+			0,							/*rightshift*/
+			2,							/*size*/
+			14,							/*bit size*/
+			TRUE,						/*pc_relative*/
+			0,							/*bit position*/
+			complain_overflow_signed,	/*complain on overflow*/
+			bfd_elf_generic_reloc,		/*special_function*/
+			"R_FUSION_STORE",			/*name*/
+			FALSE,						/*partial_inplace*/
+			0x00000000,					/*src_mask*/
+			GET_IMM_S(MASK_IMM_S),		/*dst_mask*/
+			FALSE),						/*pcrel_offset*/
+
+
 	/*14 Bit PC Relative Branch*/
 	HOWTO (R_FUSION_BRANCH,
 			0,							/*rightshift*/
@@ -111,8 +228,16 @@ struct fusion_reloc_map {
 static const struct fusion_reloc_map fusion_reloc_map [] = {
 	{ BFD_RELOC_NONE,				R_FUSION_NONE},
 	{ BFD_RELOC_32,					R_FUSION_32},
+	{ BFD_RELOC_16,					R_FUSION_LI},
+	{ BFD_RELOC_FUSION_HI16,		R_FUSION_LUI},
+	{ BFD_RELOC_16_PCREL,			R_FUSION_LI_PCREL},
+	{ BFD_RELOC_HI16_PCREL,			R_FUSION_LUI_PCREL},
+	{ BFD_RELOC_8,					R_FUSION_SYS},
+	{ BFD_RELOC_FUSION_LOAD,		R_FUSION_LOAD},
+	{ BFD_RELOC_FUSION_STORE,		R_FUSION_STORE},
 	{ BFD_RELOC_FUSION_14_PCREL,	R_FUSION_BRANCH},
 	{ BFD_RELOC_FUSION_21_PCREL, 	R_FUSION_JUMP},
+	{ BFD_RELOC_FUSION_12, 			R_FUSION_I},
 
 };
 
@@ -140,7 +265,7 @@ static reloc_howto_type* fusion_reloc_name_lookup( bfd *abfd ATTRIBUTE_UNUSED,\
 }
 
 /*set howto pointer for FUSION ELF relocation (?) */
-static void fusion_info_to_howto_rela(bfd *abfd ATTRIBUTE_UNUSED,\
+static void fusion_info_to_howto(bfd *abfd ATTRIBUTE_UNUSED,\
 								arelent *cache_ptr,\
 								Elf_Internal_Rela *dst){
 	unsigned int r_type;
@@ -327,6 +452,10 @@ static bfd_boolean fusion_elf_check_relocs(bfd* abfd,
 }
 
 
+/* for static relocations */
+static bfd_reloc_status_type perform_relocation
+
+
 #define ELF_ARCH			bfd_arch_fusion
 #define ELF_MACHINE_CODE	EM_FUSION
 #define ELF_MAXPAGESIZE		0x1
@@ -335,7 +464,7 @@ static bfd_boolean fusion_elf_check_relocs(bfd* abfd,
 #define TARGET_BIG_NAME		"elf32-fusion"
 
 #define elf_info_to_howto_rel				NULL
-#define elf_info_to_howto					fusion_info_to_howto_rela
+#define elf_info_to_howto					fusion_info_to_howto
 #define elf_backend_relocate_section		fusion_elf_relocate_section
 #define elf_backend_gc_mark_hook			fusion_elf_gc_mark_hook
 #define elf_backend_check_relocs			fusion_elf_check_relocs

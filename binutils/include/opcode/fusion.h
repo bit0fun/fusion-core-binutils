@@ -164,9 +164,12 @@
 #define FRMT_J				5
 #define FRMT_B				6
 #define FRMT_SYS			7
+#define FRMT_MAX			9
 
 /*Defines for Co-Processor ID*/
 #define CPID_MAIN		0
+#define CPID_MACRO		1
+#define CPID_MAX		2
 
 /*Defines for Opcodes*/
 #define OPC_INT			0x01
@@ -195,7 +198,13 @@ typedef struct fusion_opc_info_t {
 
 } fusion_opc_info_t;
 
+/*Macro IDs*/
+enum{
+	M_LA,
+	M_CALL,
+	M_MAX
 
+};
 
 
 extern const fusion_opc_info_t fusion_insn_all[NUM_INSN];

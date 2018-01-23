@@ -38,9 +38,13 @@
 #define md_convert_frag(B, S, F)            as_fatal (_("convert_frag\n"))
 
 /*PC Relative operands are relative to the start of the opcode,
-* and the operand is always one byts into the opcode(?)*/
-
+* and the operand is always one byte into the opcode(?)*/
+/*
 #define md_pcrel_from(FIX) \
 	((FIX)->fx_where + (FIX)->fx_frag->fr_address -1)
+*/
+extern long md_pcrel_from(struct fix*);
+extern void fusion_pop_insert(void);
+#define md_pop_insert() fusion_pop_insert()
 
 #define md_section_align(SEGMENT, SIZE) (SIZE)
