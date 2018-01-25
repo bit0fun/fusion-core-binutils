@@ -11,7 +11,7 @@
 
 #define MAKE_I_TYPE(RD, RSA, IMM, ALUOP) \
 		( ( RD & 0x1f ) <<21 ) | ( ( RSA & 0x1f ) << 16) \
-       		| ( ( IMM & 0xfff )  << 4)| ( ALUOP & 0x0f ) \
+       		| ( GEN_I_IMM(IMM) )| ( ALUOP & 0x0f ) \
 		| ( ( OPC_IMM & 0x3f ) << 26)
 
 #define MAKE_L_TYPE(RD, RSA, FUNCT, IMM) \
@@ -20,7 +20,7 @@
 		| ( ( OPC_LD & 0x3f ) << 26)
 
 #define MAKE_LI_TYPE(RD, DSEL, IMM) \
-		( ( RD & 0x1f ) << 21) | ( ( DSEL & 0xf )<< 16) \
+		( ( RD & 0x1f ) << 21) | ( ( DSEL & 0xf )<< 17) \
 		| (IMM & 0xffff) | ( ( OPC_LI & 0x3f ) << 26)
 
 #define MAKE_S_TYPE(FUNCT, RSA, RSB, IMM) \
@@ -62,10 +62,10 @@
 #define GEN_SHFT(SHFT) 		( SHFT << 4  ) & MASK_SHFT
 #define GEN_ALUOP(OP)		( GET_ALUOP(OP) )
 #define GEN_FUNCT_L(F)		( F & 0x03 ) << 14
-#define GEN_I_IMM(IMM)		( IMM & MASK_IMM_I) << 4
-#define GEN_S_IMM(IMM)		( GET_SPLIT_S_IMM_HI(IMM) | GET_SPLIT_S_IMM_LO(IMM) )
-#define GEN_J_IMM(IMM)		( GET_SPLIT_J_IMM_HI(IMM) | GET_SPLIT_J_IMM_LO(IMM) )
-#define GEN_B_IMM(IMM)		( GET_SPLIT_B_IMM_HI(IMM) | GET_SPLIT_B_IMM_LO(IMM) )
+#define GEN_I_IMM(IMM)		( ( IMM << 4 ) & MASK_IMM_I)  
+#define GEN_S_IMM(IMM)		( ( GET_SPLIT_S_IMM_HI(IMM) | GET_SPLIT_S_IMM_LO(IMM) ) & MASK_IMM_S )
+#define GEN_J_IMM(IMM)		( ( GET_SPLIT_J_IMM_HI(IMM) | GET_SPLIT_J_IMM_LO(IMM) ) & MASK_IMM_J )
+#define GEN_B_IMM(IMM)		( ( GET_SPLIT_B_IMM_HI(IMM) | GET_SPLIT_B_IMM_LO(IMM) ) & MASK_IMM_B )
 #define GEN_SYS_IMM(IMM)	( IMM & MASK_IMM_SYS)
 #define GEN_L_IMM(IMM)		( GET_IMM_L(IMM) )
 

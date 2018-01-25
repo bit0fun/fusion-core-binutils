@@ -108,7 +108,7 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 				fpr(stream, "jrl\t0x%x($%s)",  GET_IMM_J(insn_word), \
 								fusion_gpreg_name[ GET_RSA(insn_word) ] );
 			else if (IS_JMP_INSN( insn_word ) ) //jump register
-				fpr(stream, "jr\t0%x($%s)", GET_IMM_J(insn_word), \
+				fpr(stream, "jr\t0x%x($%s)", GET_IMM_J(insn_word), \
 								fusion_gpreg_name[ GET_RSA(insn_word) ] );
 			else
 				fpr(stream, "nri"); //not a real jump

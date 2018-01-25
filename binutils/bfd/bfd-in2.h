@@ -3198,8 +3198,10 @@ to compensate for the borrow when the low bits are added.  */
   BFD_RELOC_FUSION_LOAD,	 //Load immediate relocations
   BFD_RELOC_FUSION_14_PCREL, //For branches
   BFD_RELOC_FUSION_21_PCREL, //For jumps
+  BFD_RELOC_FUSION_21,		 //For jump offsets
   BFD_RELOC_FUSION_HI16,	//high 16 bits 
   BFD_RELOC_FUSION_12,		//absolute number for alu immediate
+  
 
 
 /* This is a 24bit GOT-relative reloc for the mn10300.  */
