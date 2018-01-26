@@ -17,26 +17,26 @@ test -x "$ENTRY" && ENTRY=_start
 #else
 	test -z "$TEXT_START_ADDR" && TEXT_START_ADDR = "0x40000"
 #fi
-#if  test "x$LD_FLAG" = "xn" -o "x$LD_FLAG" = "xN" ; then
-#	DATA_ADDR=.
-#else
-	test -z "$DATA_ADDR" && DATA_ADDR=0x2000000
-#fi
+if  test "x$LD_FLAG" = "xn" -o "x$LD_FLAG" = "xN" ; then
+	DATA_ADDR=.
+else
+	test -z "$DATA_ADDR" && DATA_ADDR=0x20000000
+fi
 cat <<EOF
 
-OUTPUT_FORMAT("{OUTPUT_FORMAT}")
-OUTPUT_ARCH(${ARCH})
+ OUTPUT_FORMAT("{OUTPUT_FORMAT}")
+ OUTPUT_ARCH(${ARCH})
 
-#${LIB_SEARCH_DIRS}
+${LIB_SEARCH_DIRS}
 
-#${RELOCATING+ENTRY(${ENTRY})}
+${RELOCATING+ENTRY(${ENTRY})}
 
-MEMORY
-{
-		rom			: ORIGIN = 32K		LENGTH = 2G
-		ram			: ORIGIN = 2G		LENGTH = 0x7FFF8000
+#MEMORY
+#{
+#		rom			: ORIGIN = ${TEXT_START_ADDRESS}		LENGTH = 2G
+#		ram			: ORIGIN = ${DATA_ADDR}		LENGTH = 0x7FFF8000
 
-}
+#}
 
 
 
@@ -51,15 +51,16 @@ SECTIONS
 		*(.fini)
 		${RELOCATING+ etext = . };
 		${RELOCATING+ _etext = . };
-	} ${RELOCATING+ > ram} 
-
+	} #${RELOCATING+ > ram} 
+	. = ${DATA_START};
 	${RELOCATING+. = ${DATA_ADDR};}
-#	.rdata :{
-#		*(.rdata)
-#	}
-#	${RELOCATING+ _fdata = ALIGN(16);}
-	.data : {
+	.rdata :{
+		*(.rdata)
+	}
+	${RELOCATING+ _fdata = ALIGN(32);}
+	.data ALIGN(4) : {
 		*(.data)
+		. = ALIGN(4);
 		${CONSTRUCTING+CONSTRUCTORS}
 	}
 	.sdata : {

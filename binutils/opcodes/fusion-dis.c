@@ -70,27 +70,27 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 						fusion_gpreg_name[GET_RSB(insn_word)] );
 	} else if( IS_I_TYPE(insn_word) ) { //need to get alu op to determine instruction
 		insn = &fusion_insn_I[ GET_ALUOP(insn_word) ];
-		fpr(stream, "%s\t$%s, $%s, 0x%x", insn->name,\
+		fpr(stream, "%s\t$%s, $%s, 0x%03x", insn->name,\
 						fusion_gpreg_name[ GET_RD(insn_word) ],\
 						fusion_gpreg_name[ GET_RSA(insn_word) ],\
 						GET_IMM_I(insn_word) );
 				
 	} else if( IS_L_TYPE(insn_word) ) {
 		insn = &fusion_insn_L[ GET_FUNCT_L(insn_word) ];
-		fpr(stream, "%s\t$%s, 0x%x(%s)", insn->name, \
+		fpr(stream, "%s\t$%s, 0x%03x(%s)", insn->name, \
 						fusion_gpreg_name[ GET_RD(insn_word) ],\
 						GET_IMM_L(insn_word),\
 						fusion_gpreg_name[ GET_RSA(insn_word) ] );
 	
 	} else if( IS_LI_TYPE(insn_word) ) {
 		insn = &fusion_insn_LI[ GET_DSEL_LI(insn_word) ];
-		fpr(stream, "%s\t$%s, 0x%x", insn->name, \
+		fpr(stream, "%s\t$%s, 0x%04x", insn->name, \
 						fusion_gpreg_name[ GET_RD(insn_word) ],\
 						GET_IMM_L(insn_word) );
 	
 	} else if( IS_S_TYPE(insn_word) ) {
 		insn = &fusion_insn_S[ GET_FUNCT_S(insn_word) ];
-		fpr(stream, "%s\t$%s, 0x%x($%s)", insn->name, \
+		fpr(stream, "%s\t$%s, 0x%03x($%s)", insn->name, \
 						fusion_gpreg_name[ GET_RSB(insn_word) ],\
 						GET_IMM_S(insn_word),\
 						fusion_gpreg_name[ GET_RSA(insn_word) ] );
@@ -98,17 +98,17 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 	} else if((opc == 0x06) || (opc == 0x07)){// else if( IS_J_TYPE(insn_word) ) {
 		if( GET_RSA(insn_word) == 0x00 ) { //if just a normal jump
 			if ( IS_JLNK_INSN( insn_word ) ) //if jump and link
-				fpr(stream, "jal\t0x%x",  GET_IMM_J(insn_word)  );
+				fpr(stream, "jal\t0x%06x",  GET_IMM_J(insn_word)  );
 			else if (IS_JMP_INSN( insn_word ) )
-				fpr(stream, "j\t0x%x",  GET_IMM_J(insn_word)  );
+				fpr(stream, "j\t0x%06x",  GET_IMM_J(insn_word)  );
 			else
 				fpr(stream, "nri"); //not a real jump
 		} else { //using register, no possible error here
 			if ( IS_JLNK_INSN( insn_word ) ) //jump register and link
-				fpr(stream, "jrl\t0x%x($%s)",  GET_IMM_J(insn_word), \
+				fpr(stream, "jrl\t0x%06x($%s)",  GET_IMM_J(insn_word), \
 								fusion_gpreg_name[ GET_RSA(insn_word) ] );
 			else if (IS_JMP_INSN( insn_word ) ) //jump register
-				fpr(stream, "jr\t0x%x($%s)", GET_IMM_J(insn_word), \
+				fpr(stream, "jr\t0x%06x($%s)", GET_IMM_J(insn_word), \
 								fusion_gpreg_name[ GET_RSA(insn_word) ] );
 			else
 				fpr(stream, "nri"); //not a real jump
@@ -116,7 +116,7 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 	
 	} else if( IS_B_TYPE(insn_word) ) {
 			insn = &fusion_insn_B[ GET_FUNCT_B(insn_word) ];
-			fpr(stream, "%s\t$%s,$%s,0x%x", insn->name,\
+			fpr(stream, "%s\t$%s,$%s,0x%03x", insn->name,\
 							fusion_gpreg_name[ GET_RSA(insn_word) ],\
 							fusion_gpreg_name[ GET_RSB(insn_word) ],\
 							GET_IMM_B(insn_word));
@@ -128,10 +128,10 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 				fpr(stream, "%s", insn->name);
 				break;
 			case USE_I: //only immediate
-				fpr(stream, "%s\t0x%x", insn->name, GET_IMM_SYS(insn_word));
+				fpr(stream, "%s\t0x%02x", insn->name, GET_IMM_SYS(insn_word));
 				break;
 			case USE_RAI: //RSa and immediate
-				fpr(stream, "%s\t$%s,0x%x", insn->name,\
+				fpr(stream, "%s\t$%s,0x%02x", insn->name,\
 								fusion_gpreg_name[ GET_RSA(insn_word) ],\
 								GET_IMM_SYS(insn_word));
 				break;
@@ -153,12 +153,12 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 					break;
 				}
 			case USE_RDI: //Rd and immediate
-					fpr(stream, "%s\t$%s,0x%x", insn->name,\
+					fpr(stream, "%s\t$%s,0x%02x", insn->name,\
 								fusion_gpreg_name[ GET_RD(insn_word) ],\
 								 GET_IMM_SYS(insn_word)  );
 				break;			
 			case USE_RDAI: //Rd, RSa, and immediate
-					fpr(stream, "%s\t$%s, $%s, 0x%x", insn->name,\
+					fpr(stream, "%s\t$%s, $%s, 0x%02x", insn->name,\
 								fusion_gpreg_name[ GET_RD(insn_word) ],\
 								fusion_gpreg_name[ GET_RSA(insn_word) ],\
 								GET_IMM_SYS(insn_word) );
