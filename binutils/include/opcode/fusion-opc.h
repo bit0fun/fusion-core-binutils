@@ -64,7 +64,7 @@
 #define GEN_FUNCT_L(F)		( F & 0x03 ) << 14
 #define GEN_I_IMM(IMM)		( ( IMM << 4 ) & MASK_IMM_I)  
 #define GEN_S_IMM(IMM)		( ( GET_SPLIT_S_IMM_HI(IMM) | GET_SPLIT_S_IMM_LO(IMM) ) & MASK_IMM_S )
-#define GEN_J_IMM(IMM)		( ( GET_SPLIT_J_IMM_HI(IMM) | GET_SPLIT_J_IMM_LO(IMM) ) & MASK_IMM_J )
+#define GEN_J_IMM(IMM)		( ( GET_SPLIT_J_IMM_HI(IMM) | GET_SPLIT_J_IMM_LO(IMM) ) )//& MASK_IMM_J )
 #define GEN_B_IMM(IMM)		( ( GET_SPLIT_B_IMM_HI(IMM) | GET_SPLIT_B_IMM_LO(IMM) ) & MASK_IMM_B )
 #define GEN_SYS_IMM(IMM)	( IMM & MASK_IMM_SYS)
 #define GEN_L_IMM(IMM)		( GET_IMM_L(IMM) )

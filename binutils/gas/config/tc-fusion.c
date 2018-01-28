@@ -229,10 +229,10 @@ static void add_relaxed_insn(struct fusion_cl_insn* insn, int max_chars,
 		int var, relax_substateT subtype, symbolS* symbol, 
 		offsetT offset){
 	frag_grow(max_chars);
-	move_insn(insn, frag_now, frag_more(0) - frag_now->fr_literal);
-	insn->fixed_p = 1;
-	frag_var(rs_machine_dependent, max_chars, var, subtype, symbol, offset,
-			NULL);
+			move_insn(insn, frag_now, frag_more(0) - frag_now->fr_literal);
+			insn->fixed_p = 1;
+			frag_var(rs_machine_dependent, max_chars, var, subtype, symbol, offset,
+					NULL);
 
 }
 */
@@ -305,7 +305,7 @@ enum reg_file{
 static struct hash_control* reg_names_hash = NULL;
 
 #define ENCODE_REG_HASH(rf, n)\
-	((void*)(uintptr_t)((n) * REGF_MAX + (rf) + 1))
+			((void*)(uintptr_t)((n) * REGF_MAX + (rf) + 1))
 #define DECODE_REG_FILE(hash) (((uintptr_t)(hash) - 1) % REGF_MAX)
 #define DECODE_REG_NUM(hash) (((uintptr_t)(hash) - 1) / REGF_MAX)
 
@@ -436,11 +436,11 @@ static void append_insn(struct fusion_cl_insn* ip, expressionS* addr_expr,
 			if(howto == NULL){
 				as_bad(_("Unsupported Fusion-Core relocation number: %d"), reloc_type);
 			}
-//			ip->fixptr = fix_new_exp(ip->frag, ip->frag_offset,
-//							bfd_get_reloc_size(howto),
-//							addr_expr, FALSE, reloc_type);
-	//	}
-	}
+			ip->fixptr = fix_new_exp(ip->frag, ip->frag_offset,
+							bfd_get_reloc_size(howto),
+							addr_expr, FALSE, reloc_type);
+		}
+	//}
 	add_fixed_insn(ip);
 	install_insn(ip);
 
@@ -667,18 +667,20 @@ static void getExpression(expressionS* ep, char* str){
 	input_line_pointer = save_in;
 
 #ifdef DEBUG
-	/*Printing out what kind of expression*/
-	if(ep->X_op == O_constant){
-		as_warn(_("Expression is O_constant"));
-	} else if(ep->X_op == O_symbol){
-		as_warn(_("Expression is O_symbol"));
-	} else if(ep->X_op == O_register){
-		as_warn(_("Expression is O_symbol"));
-	} else if(ep->X_op == O_big){
-		as_warn(_("Expression is O_big"));
-	} else if(ep->X_op == O_illegal){
-		as_warn(_("Expression is O_illegal"));
-	}
+			/*Printing out what kind of expression*/
+		/*
+			if(ep->X_op == O_constant){
+				as_warn(_("Expression is O_constant"));
+			} else if(ep->X_op == O_symbol){
+				as_warn(_("Expression is O_symbol"));
+			} else if(ep->X_op == O_register){
+				as_warn(_("Expression is O_symbol"));
+			} else if(ep->X_op == O_big){
+				as_warn(_("Expression is O_big"));
+			} else if(ep->X_op == O_illegal){
+				as_warn(_("Expression is O_illegal"));
+			}
+		*/
 #endif
 
 
@@ -971,20 +973,21 @@ int parse_imm( int* imm, char** op_end, expressionS* imm_expr, bfd_reloc_code_re
 //	} else {
 		//getSmallExpression(imm_expr, &reloc, *op_end);
 //	}
-	char* where;
-	where = frag_more(WORST_CASE);
+//	char* where;
+//	where = frag_more(4);
+	as_warn(_("Insn parse: %s"), ip->insn_mo->name);
 	switch(reloc){
 			//finding if pc relative
 		case BFD_RELOC_FUSION_14_PCREL:
 				/*fallthru*/
 		case BFD_RELOC_FUSION_21_PCREL:
 			
-			ip->fixptr = fix_new_exp(frag_now,
-							(where - frag_now->fr_literal),
-							WORST_CASE,
-							imm_expr,
-							TRUE,
-							reloc);		
+//					ip->fixptr = fix_new_exp(frag_now,
+//									(where - frag_now->fr_literal),
+//									4,
+//									imm_expr,
+//									TRUE,
+//									reloc);		
 			break;
 		case BFD_RELOC_32:
 		case BFD_RELOC_16:
@@ -998,12 +1001,12 @@ int parse_imm( int* imm, char** op_end, expressionS* imm_expr, bfd_reloc_code_re
 	//		as_fatal(_("Immediate is not constant: %lx"),(unsigned long)imm_expr->X_add_number);
 	//		break;
 		}
-			ip->fixptr = fix_new_exp(frag_now,
-							(where - frag_now->fr_literal),
-							WORST_CASE,
-							imm_expr,
-							FALSE,
-							reloc);		
+//					ip->fixptr = fix_new_exp(frag_now,
+//									(where - frag_now->fr_literal),
+//									4,
+//									imm_expr,
+//									FALSE,
+//									reloc);		
 			break;
 		case BFD_RELOC_NONE:
 			break;
@@ -1607,7 +1610,7 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 //	offsetT loc;
 //	segT sub_segment;
 	fixP->fx_addnumber = *valP;
-
+	as_warn(_("In md_apply_fix"));
 //	max = min = 0;
 	switch(fixP->fx_r_type){
 		case BFD_RELOC_FUSION_HI16:
@@ -1635,15 +1638,39 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 		//	if( (*valP < -8192) || (*valP < 8191) )
 		//	as_bad_where(fixP->fx_file, fixP->fx_line,
 		//					_("too large pc relative branch"));
-			if(fixP->fx_addsy){
-				bfd_vma target = S_GET_VALUE(fixP->fx_addsy) + *valP;
-				bfd_vma delta = target - md_pcrel_from(fixP);
-				bfd_putb32( bfd_getb32(buf) | GEN_B_IMM(delta), buf);
-			} else {
-				bfd_vma target = fixP->fx_offset;
-				bfd_vma delta = target - md_pcrel_from(fixP);
-				bfd_putb32( bfd_getb32(buf) | GEN_B_IMM(delta), buf);
-			}
+	//		if(fixP->fx_addsy){
+	//			bfd_vma target = S_GET_VALUE(fixP->fx_addsy) + *valP;
+	//			bfd_vma delta = target - md_pcrel_from(fixP);
+	//			bfd_putb32( bfd_getb32(buf) | GEN_B_IMM(delta), buf);
+	//			as_warn(_("Using fx_addsy: %08x"), (unsigned int) (fixP->fx_addsy));
+	//		} else {
+	//			bfd_vma target = fixP->fx_offset;
+	//			bfd_vma delta = target - md_pcrel_from(fixP);
+	//			bfd_putb32( bfd_getb32(buf) | GEN_B_IMM(delta), buf);
+	//			as_warn(_("Using fx_offset: %08x"), (unsigned int) (fixP->fx_offset));
+	//		}
+
+			 if(fixP->fx_addsy){
+				 bfd_vma target = S_GET_VALUE(fixP->fx_addsy) + *valP;
+				 bfd_vma delta = target - md_pcrel_from(fixP);
+				 if ( ( ( (signed int) delta ) < -8192) || ( ( (signed int) delta ) > 8192)){
+					 as_bad_where(fixP->fx_file, fixP->fx_line,_("too large pc relative branch"));
+ 
+				 }
+				 as_warn(_("Branch value: %x"), (unsigned int)delta);
+				 as_warn(_("Using fx_addsy"));
+				 bfd_putb32( bfd_getb32(buf) | GEN_B_IMM(delta), buf);
+				 
+			 } else {
+				 bfd_vma target = fixP->fx_offset;//S_GET_VALUE(fixP->fx_offset) + *valP;
+				 bfd_vma delta = target - md_pcrel_from(fixP);
+				 bfd_putb32( bfd_getb32(buf) | GEN_B_IMM(delta), buf);   
+				 as_warn(_("Branch value: %x"), (unsigned int)delta);
+				 as_warn(_("Using fx_offset"));
+     }
+
+
+
 			break;
 		case BFD_RELOC_FUSION_21_PCREL:
 			if(!*valP)
@@ -1654,11 +1681,12 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 				bfd_vma target = S_GET_VALUE(fixP->fx_addsy) + *valP;
 				bfd_vma delta = target - md_pcrel_from(fixP);
 				bfd_putb32( bfd_getb32(buf) | GEN_J_IMM(delta), buf);				
-			} else {
-				bfd_vma target = fixP->fx_offset;	
-				bfd_vma delta = (target - md_pcrel_from(fixP)) >> 2;
+				as_warn(_("Using fx_addsy"));
+			} else if(fixP->fx_offset && !(fixP->fx_addsy)){
+				bfd_vma target = (fixP->fx_offset + *valP);	
+				bfd_vma delta = (target - md_pcrel_from(fixP)) << 2;
 				bfd_putb32( bfd_getb32(buf) | GEN_J_IMM(delta), buf);
-
+				as_warn(_("Using fx_offset"));
 			}
 			break;
 
@@ -1677,28 +1705,23 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 }
 
 arelent *tc_gen_reloc(asection* section ATTRIBUTE_UNUSED, fixS *fixp){
-	arelent* rel;
-	bfd_reloc_code_real_type r_type;
+	arelent* reloc;
 
-	rel = (arelent *)xmalloc( sizeof(arelent) );
-	rel->sym_ptr_ptr = (asymbol **) xmalloc( sizeof( asymbol* ) );
-	*rel->sym_ptr_ptr= symbol_get_bfdsym(fixp->fx_addsy);
-	rel->address = fixp->fx_frag->fr_address + fixp->fx_where;
+	reloc = (arelent *)xmalloc( sizeof(arelent) );
+	reloc->sym_ptr_ptr = (asymbol **) xmalloc( sizeof( asymbol* ) );
+	*reloc->sym_ptr_ptr= symbol_get_bfdsym(fixp->fx_addsy);
+	reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
 
-	r_type = fixp->fx_r_type;
+	reloc->howto = bfd_reloc_type_lookup(stdoutput, fixp->fx_r_type);
 
-	rel->howto = bfd_reloc_type_lookup(stdoutput, r_type);
-
-	if(rel->howto == NULL){
-		as_bad_where(fixp->fx_file, fixp->fx_line, _("Cannot represent relocation type %s"),bfd_get_reloc_code_name(r_type));
+	if(reloc->howto == NULL){
+		as_bad_where(fixp->fx_file, fixp->fx_line, _("Cannot represent relocation type %s"),bfd_get_reloc_code_name(fixp->fx_r_type));
 		/*set to garbage value to continue usage*/
-		rel->howto = bfd_reloc_type_lookup(stdoutput, BFD_RELOC_32);
-		gas_assert(rel->howto != NULL);
-	
+		return NULL;
 	}
-
-	return rel;
+	return reloc;
 }
+
 long md_pcrel_from(fixS* fixP){
 	return fixP->fx_where + fixP->fx_frag->fr_address;
 }

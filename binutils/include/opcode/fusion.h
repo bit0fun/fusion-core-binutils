@@ -86,10 +86,14 @@
 #define SPLIT_S_IMM_LO		0x000007ff //lower byte
 #define SPLIT_S_IMM_HI		0x00003800 
 #define SPLIT_J_IMM_LO		0x0000ffff //lower 16 bits
-#define SPLIT_J_IMM_HI		0x003f0000
+#define SPLIT_J_IMM_HI		0x001f0000
 #define SPLIT_B_IMM_LO		0x000001ff //lower byte
 #define SPLIT_B_IMM_HI		0x00003e00 
 
+//001f
+//0000 0000 0001 1111
+//0000 0011 1110 0000
+//03e0
 
 /* Bit shift amounts*/
 #define SHFT_IMM_HI_S		10 //11 -> 21

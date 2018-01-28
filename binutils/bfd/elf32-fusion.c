@@ -214,9 +214,9 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			complain_overflow_signed,	/*complain on overflow*/
 			bfd_elf_generic_reloc,		/*special_function*/
 			"R_FUSION_JUMP",			/*name*/
-			TRUE,						/*partial_inplace*/
-			0,					/*src_mask*/
-			0,					/*dst_mask*/
+			FALSE,						/*partial_inplace*/
+			0x001fffff,					/*src_mask*/
+			0x001fffff,					/*dst_mask*/
 			TRUE),						/*pcrel_offset*/
 	/*21 Bit PC Relative Jump Register*/
 	HOWTO (R_FUSION_JUMP_O,
