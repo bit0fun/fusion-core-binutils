@@ -489,6 +489,7 @@ const fusion_opc_info_t fusion_insn_all[NUM_INSN] = {
 /*	Macro Instructions														*/
 /* Name  	MID		args		frmt		cpid		imm_mask		opc	*/
 {"call",	M_CALL,	USE_RAI_O,	FRMT_J,		CPID_MACRO,	MASK_IMM_J,		0x07},
-{"la",		M_LA,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	0x02},
+{"la",		M_LA,	USE_RDI,	FRMT_LI,	CPID_MACRO,	MASK_IMM_LI,	0x02},
+{"ret",		M_RET,	USE_RAI_O,	FRMT_J,		CPID_MACRO, MASK_IMM_J,		0x06},
 {0,			0,		0,			0,			0,			0,				0   }
 };
