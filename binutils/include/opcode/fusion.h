@@ -90,11 +90,6 @@
 #define SPLIT_B_IMM_LO		0x000001ff //lower byte
 #define SPLIT_B_IMM_HI		0x00003e00 
 
-//001f
-//0000 0000 0001 1111
-//0000 0011 1110 0000
-//03e0
-
 /* Bit shift amounts*/
 #define SHFT_IMM_HI_S		10 //11 -> 21
 #define SHFT_IMM_HI_J		5 //16 ->21
@@ -115,7 +110,7 @@
 #define GET_FUNCT_S(i)		( (MASK_FUNCT_S & i) >> 24 ) & 0x3
 #define GET_IMM_S(i)		(MASK_IMM_LO_S & i) | ( (MASK_IMM_HI_S & i) >> 10)
 #define GET_IMM_J(i)		(MASK_IMM_LO_J & i) | ( (MASK_IMM_HI_J & i) >> 5)	
-#define GET_IMM_B(i)		( (MASK_IMM_LO_B & i) >> 2 ) | ( (MASK_IMM_HI_B & i) >> 10 ) 
+#define GET_IMM_B(i)		( (MASK_IMM_LO_B & i) >> 2 ) | ( (MASK_IMM_HI_B & i) >> 12 ) 
 #define GET_FUNCT_B(i)		(MASK_FUNCT_B & i)
 #define GET_FUNCT_SYS(i)	(MASK_FUNCT_SYS & i) >> 8
 #define GET_IMM_SYS(i)		(MASK_IMM_SYS & i)

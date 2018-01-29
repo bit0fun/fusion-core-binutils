@@ -229,10 +229,10 @@ static void add_relaxed_insn(struct fusion_cl_insn* insn, int max_chars,
 		int var, relax_substateT subtype, symbolS* symbol, 
 		offsetT offset){
 	frag_grow(max_chars);
-			move_insn(insn, frag_now, frag_more(0) - frag_now->fr_literal);
-			insn->fixed_p = 1;
-			frag_var(rs_machine_dependent, max_chars, var, subtype, symbol, offset,
-					NULL);
+		move_insn(insn, frag_now, frag_more(0) - frag_now->fr_literal);
+		insn->fixed_p = 1;
+		frag_var(rs_machine_dependent, max_chars, var, subtype, symbol, offset,
+				NULL);
 
 }
 */
@@ -420,27 +420,45 @@ static void append_insn(struct fusion_cl_insn* ip, expressionS* addr_expr,
 		reloc_howto_type* howto;
 
 		gas_assert(addr_expr);
-		/*
+/*		
 		if( (reloc_type == BFD_RELOC_FUSION_14_PCREL) \
 			|| (reloc_type == BFD_RELOC_FUSION_21_PCREL)){
 			int j = reloc_type == BFD_RELOC_FUSION_21_PCREL;
-			int best_case = 4;//insn_length(ip->insn_word);
-			unsigned worst_case = 8;//relaxed_branch_length(NULL, NULL, 0);
-			add_relaxed_insn(ip, worst_case, best_case, 
-							RELAX_BRANCH_ENCODE(j, worst_case),
+			//int best_case = 4;//insn_length(ip->insn_word);
+			//unsigned worst_case = 8;//relaxed_branch_length(NULL, NULL, 0);
+			add_relaxed_insn(ip, 4, 8, 
+							RELAX_BRANCH_ENCODE(j, 4),
 							addr_expr->X_add_symbol,
 							addr_expr->X_add_number);
 			return;
-		} else{ */
+		} else{ 
+		*/
 			howto = bfd_reloc_type_lookup(stdoutput, reloc_type);
 			if(howto == NULL){
 				as_bad(_("Unsupported Fusion-Core relocation number: %d"), reloc_type);
 			}
-			ip->fixptr = fix_new_exp(ip->frag, ip->frag_offset,
+
+			switch(reloc_type){
+				case BFD_RELOC_FUSION_14_PCREL:
+				case BFD_RELOC_FUSION_21_PCREL:
+					ip->fixptr = fix_new_exp(ip->frag, ip->frag_offset,
 							bfd_get_reloc_size(howto),
 							addr_expr, FALSE, reloc_type);
-		}
-	//}
+					ip->fixptr->fx_tcbit = 0;
+					break;
+				default:
+					ip->fixptr = fix_new_exp(ip->frag, ip->frag_offset,
+							bfd_get_reloc_size(howto),
+							addr_expr, FALSE, reloc_type);
+					ip->fixptr->fx_tcbit = 0;
+				break;
+			}
+		//	ip->fixptr = fix_new_exp(ip->frag, ip->frag_offset,
+		//					bfd_get_reloc_size(howto),
+		//					addr_expr, FALSE, reloc_type);
+		//	ip->fixptr->fx_tcbit = 0;
+	//	}
+	}
 	add_fixed_insn(ip);
 	install_insn(ip);
 
@@ -961,7 +979,7 @@ int parse_rab( int* rsa, int* rsb, char* op_end){
 	return 0;
 } 
 
-int parse_imm( int* imm, char** op_end, expressionS* imm_expr, bfd_reloc_code_real_type reloc, struct fusion_cl_insn* ip){
+int parse_imm( int* imm, char** op_end, expressionS* imm_expr, bfd_reloc_code_real_type reloc, struct fusion_cl_insn* ip ATTRIBUTE_UNUSED){
 
 	while( (**op_end == ' ') || (**op_end == '\t') )
 		   (*op_end)++;
@@ -975,7 +993,7 @@ int parse_imm( int* imm, char** op_end, expressionS* imm_expr, bfd_reloc_code_re
 //	}
 //	char* where;
 //	where = frag_more(4);
-	as_warn(_("Insn parse: %s"), ip->insn_mo->name);
+//	as_warn(_("Insn parse: %s"), ip->insn_mo->name);
 	switch(reloc){
 			//finding if pc relative
 		case BFD_RELOC_FUSION_14_PCREL:
@@ -1610,7 +1628,7 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 //	offsetT loc;
 //	segT sub_segment;
 	fixP->fx_addnumber = *valP;
-	as_warn(_("In md_apply_fix"));
+//	as_warn(_("In md_apply_fix"));
 //	max = min = 0;
 	switch(fixP->fx_r_type){
 		case BFD_RELOC_FUSION_HI16:
@@ -1652,21 +1670,24 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 
 			 if(fixP->fx_addsy){
 				 bfd_vma target = S_GET_VALUE(fixP->fx_addsy) + *valP;
-				 bfd_vma delta = target - md_pcrel_from(fixP);
+				 bfd_vma delta = (target - md_pcrel_from(fixP) );
+				 as_warn(_("Target: %lx"), (unsigned long int)target);
+				 as_warn(_("Delta: %lx"), (unsigned long int)delta);
+				 as_warn(_("md_pcrel_from(fixP): %lx"), (unsigned long int)md_pcrel_from(fixP));
 				 if ( ( ( (signed int) delta ) < -8192) || ( ( (signed int) delta ) > 8192)){
 					 as_bad_where(fixP->fx_file, fixP->fx_line,_("too large pc relative branch"));
  
 				 }
-				 as_warn(_("Branch value: %x"), (unsigned int)delta);
-				 as_warn(_("Using fx_addsy"));
+
+//				 as_warn(_("Using fx_addsy"));
 				 bfd_putb32( bfd_getb32(buf) | GEN_B_IMM(delta), buf);
 				 
 			 } else {
 				 bfd_vma target = fixP->fx_offset;//S_GET_VALUE(fixP->fx_offset) + *valP;
 				 bfd_vma delta = target - md_pcrel_from(fixP);
-				 bfd_putb32( bfd_getb32(buf) | GEN_B_IMM(delta), buf);   
+				 bfd_putb32( bfd_getb32(buf) | GEN_B_IMM((unsigned)delta), buf);   
 				 as_warn(_("Branch value: %x"), (unsigned int)delta);
-				 as_warn(_("Using fx_offset"));
+//				 as_warn(_("Using fx_offset"));
      }
 
 
@@ -1678,15 +1699,22 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 	//		if( (*valP < -1048576) || (*valP < 1048575) )
 	//		as_bad_where(fixP->fx_file, fixP->fx_line, _("too large pc relative jump"));
 			if(fixP->fx_addsy){
-				bfd_vma target = S_GET_VALUE(fixP->fx_addsy) + *valP;
-				bfd_vma delta = target - md_pcrel_from(fixP);
-				bfd_putb32( bfd_getb32(buf) | GEN_J_IMM(delta), buf);				
-				as_warn(_("Using fx_addsy"));
+				bfd_vma target = (S_GET_VALUE(fixP->fx_addsy) + *valP);
+				bfd_vma delta = (target - md_pcrel_from(fixP));
+				as_warn(_("Target: %x"), (unsigned int)target);
+				as_warn(_("Delta: %x"), (unsigned int)delta);
+			 	as_warn(_("md_pcrel_from(fixP): %lx"), (unsigned long int)md_pcrel_from(fixP));
+				if ( ( ( (signed int) delta ) < -1048576) || ( ( (signed int) delta ) > 1048575)) {
+				 	as_bad_where(fixP->fx_file, fixP->fx_line,_("too large pc relative branch"));
+					
+				}
+				bfd_putb32( bfd_getb32(buf) | (GEN_J_IMM(delta)), buf);				
+//				as_warn(_("Using fx_addsy"));
 			} else if(fixP->fx_offset && !(fixP->fx_addsy)){
 				bfd_vma target = (fixP->fx_offset + *valP);	
 				bfd_vma delta = (target - md_pcrel_from(fixP)) << 2;
 				bfd_putb32( bfd_getb32(buf) | GEN_J_IMM(delta), buf);
-				as_warn(_("Using fx_offset"));
+//				as_warn(_("Using fx_offset"));
 			}
 			break;
 
@@ -1710,8 +1738,16 @@ arelent *tc_gen_reloc(asection* section ATTRIBUTE_UNUSED, fixS *fixp){
 	reloc = (arelent *)xmalloc( sizeof(arelent) );
 	reloc->sym_ptr_ptr = (asymbol **) xmalloc( sizeof( asymbol* ) );
 	*reloc->sym_ptr_ptr= symbol_get_bfdsym(fixp->fx_addsy);
-	reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
-
+	if(fixp->fx_r_type ==  BFD_RELOC_FUSION_21_PCREL) {
+		reloc->addend = fixp->fx_frag->fr_address + md_pcrel_from(fixp) ;
+		reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
+	}	else if (fixp->fx_r_type ==  BFD_RELOC_FUSION_14_PCREL){
+		reloc->addend = fixp->fx_frag->fr_address + md_pcrel_from(fixp);
+		reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
+	} else {
+		reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
+	}
+	as_warn(_("Reloc address: %x"), (unsigned int) (reloc->address));
 	reloc->howto = bfd_reloc_type_lookup(stdoutput, fixp->fx_r_type);
 
 	if(reloc->howto == NULL){
@@ -1723,7 +1759,7 @@ arelent *tc_gen_reloc(asection* section ATTRIBUTE_UNUSED, fixS *fixp){
 }
 
 long md_pcrel_from(fixS* fixP){
-	return fixP->fx_where + fixP->fx_frag->fr_address;
+	return (fixP->fx_where + fixP->fx_frag->fr_address);
 }
 /*
 long md_pcrel_from(fixS *fixP){
