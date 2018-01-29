@@ -75,7 +75,7 @@
 #define MASK_IMM_J			0x03e0ffff
 #define MASK_IMM_HI_J		0x03e00000	
 #define MASK_IMM_LO_J		0x0000ffff
-#define MASK_IMM_B			0x032007fc
+#define MASK_IMM_B			0x03e007fc
 #define MASK_IMM_HI_B		0x03e00000
 #define MASK_IMM_LO_B		0x000007fc
 #define MASK_FUNCT_B		0x00000003

@@ -200,7 +200,7 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			complain_overflow_signed,	/*complain on overflow*/
 			bfd_elf_generic_reloc,		/*special_function*/
 			"R_FUSION_BRANCH",			/*name*/
-			TRUE,						/*partial_inplace*/
+			FALSE,						/*partial_inplace*/
 			0x3fff,					/*src_mask*/
 			0x3fff,		/*dst_mask*/
 			TRUE),						/*pcrel_offset*/

@@ -1742,7 +1742,7 @@ arelent *tc_gen_reloc(asection* section ATTRIBUTE_UNUSED, fixS *fixp){
 		reloc->addend = fixp->fx_frag->fr_address + md_pcrel_from(fixp) ;
 		reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
 	}	else if (fixp->fx_r_type ==  BFD_RELOC_FUSION_14_PCREL){
-		reloc->addend = fixp->fx_frag->fr_address + md_pcrel_from(fixp);
+		reloc->addend = (fixp->fx_frag->fr_address + md_pcrel_from(fixp));
 		reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
 	} else {
 		reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
