@@ -70,8 +70,8 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			bfd_elf_generic_reloc,		/*special_function*/
 			"R_FUSION_LI",				/*name*/
 			FALSE,						/*partial_inplace*/
-			GET_IMM_LI(MASK_IMM_LI),	/*src_mask*/
-			MASK_IMM_LI,	/*dst_mask*/
+			0,	/*src_mask*/
+			0x0000ffff,	/*dst_mask*/
 			FALSE),						/*pcrel_offset*/
 	/*Load Upper Immediate constant relocation*/
 	HOWTO (R_FUSION_LUI,				/* Type */
@@ -84,8 +84,8 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			bfd_elf_generic_reloc,		/*special_function*/
 			"R_FUSION_LUI",				/*name*/
 			FALSE,						/*partial_inplace*/
-			GET_IMM_LI(MASK_IMM_LI),					/*src_mask*/
-			MASK_IMM_LI,	/*dst_mask*/
+			0,					/*src_mask*/
+			0x0000ffff,	/*dst_mask*/
 			FALSE),						/*pcrel_offset*/
 	/*Load Immediate PC relative relocation*/
 	HOWTO (R_FUSION_LI_PCREL,			/* Type */

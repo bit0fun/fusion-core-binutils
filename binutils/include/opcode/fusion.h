@@ -67,7 +67,7 @@
 #define MASK_IMM_L			0x00003fff
 #define MASK_FUNCT_L		0x0000c000
 #define MASK_DSEL_LI		0x001e0000
-#define MASK_IMM_LI			0x0001ffff
+#define MASK_IMM_LI			0x0000ffff
 #define MASK_FUNCT_S		0x0f000000
 #define MASK_IMM_S			0x00e007ff
 #define MASK_IMM_HI_S		0x00e00000
@@ -201,6 +201,7 @@ typedef struct fusion_opc_info_t {
 enum{
 	M_LA,
 	M_CALL,
+	M_RET,
 	M_MAX
 
 };

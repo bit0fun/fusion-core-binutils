@@ -22,6 +22,7 @@
 
 #define WORST_CASE	4
 #define DEBUG
+#define HAVE_64BIT_ADDRESSES 0 //no 64 bit addressing yet
 
 #include "as.h"
 #include "config.h"
@@ -140,6 +141,11 @@ const char EXP_CHARS[] = "eE";
 #define IS_SEXT_32BIT_NUM(x)\
 	(((x) &~ (offsetT) 0x7fffffff) == 0 \
 	 || (((x) &~ (offsetT) 0x7fffffff) == ~(offsetT) 0x7fffffff))
+
+/* Is the given value a sign-extended 16-bit value?  */
+#define IS_SEXT_16BIT_NUM(x)						\
+  (((x) &~ (offsetT) 0x7fff) == 0					\
+   || (((x) &~ (offsetT) 0x7fff) == ~ (offsetT) 0x7fff))
 
 /* Is value zero extended 32 bit value, or negated*/
 #define IS_ZEXT_32BIT_NUM(x)\
@@ -481,22 +487,23 @@ static void macro_build(expressionS *ep, const char* name, const char* fmt, ...)
 	create_insn(&insn, mo);
 	/*this may change, but is copied off of riscv for now*/
 	for(;;){
+		as_warn(_("Current argument: %c"), *fmt);
 		switch(*fmt++){
 			case 'd':
 				INSERT_OPERAND( GEN_RD( va_arg(args, int) ) , insn );
 				continue;
-			case 's':
+			case 'a':
 				INSERT_OPERAND( GEN_RSA( va_arg(args, int) ) , insn );
 				continue;
-			case 't':
+			case 'b':
 				INSERT_OPERAND( GEN_RSB( va_arg(args, int) ) , insn );
 				continue;
-			case '>':
+			case 's': //small immediate
 				INSERT_OPERAND( GEN_I_IMM( va_arg(args, int) ), insn);
 				continue;
-			case 'j':
-			case 'u':
-			case 'q':
+			case 'i': //load immedate/lower 16
+			case 'u': //load immediate/upper 16
+			case 'j': //jump immediate
 				gas_assert(ep!= NULL);
 				r = va_arg(args, int);
 				continue;
@@ -536,13 +543,91 @@ static void check_absolute_expr(struct fusion_cl_insn* ip, expressionS* ex){
 	normalize_constant_expr(ex);
 }
 
+static void load_register(int reg, expressionS* ep, int dlb){
+//	int freg;
+//	expressionS hi32, lo32;
+	if(ep->X_op != O_big){
+		gas_assert(ep->X_op == O_constant);
+		if( !dlb )
+			normalize_constant_expr(ep);
+		if( (ep->X_add_number >= 0) && (ep->X_add_number < 0x1000)){
+			macro_build(ep, "ori", "d,a,i", reg, reg, BFD_RELOC_FUSION_12);
+			return;
+		} else if(IS_SEXT_16BIT_NUM(ep->X_add_number)){
+			macro_build(ep, "li", "d,i", reg, BFD_RELOC_16);
+			return;
+		} else if((IS_SEXT_32BIT_NUM(ep->X_add_number))) {
+			macro_build(ep, "lui", "d,i", reg, BFD_RELOC_FUSION_HI16);
+			if((ep->X_add_number & 0xffff) != 0)
+				macro_build(ep, "li", "d,i", reg, BFD_RELOC_16);
+			return;
+		}
+	}
+	if( (!dlb) ){//|| GPR_SIZE == 32) 32 bit values only so far
+		char value[32];	
+		sprintf_vma(value, ep->X_add_number);
+		as_bad(_("number(0x%s) larger than 32 bits"), value);
+		macro_build(ep, "li", "d,i", reg, BFD_RELOC_16);
+		return;
+	}
+/*
+	if(ep->X_op != O_big){
+		hi32 = *ep;
+		hi32.X_add_number = (valueT) hi32.X_add_number >> 16;
+		hi32.X_add_number = (valueT) hi32.X_add_number >> 16;
+		hi32.X_add_number &= 0xffffffff;
+		lo32 = *ep;
+		lo32.X_add_number &= 0xffffffff;
+	} else {
+		gas_assert(ep->X_add_number > 2);
+		if(ep->X_add_number == 3)
+			generic_bignum[3] = 3;
+		else if(ep->X_add_number > 3)
+			as_bad(_("number larger than 64 bits"));
+		lo32.X_op = O_constant;
+		lo32.X_add_number = generic_bignum[0] + (generic_bignum[1] << 16);
+		hi32.X_op = O_constant;
+		hi32.X_add_number = generic_bignum[2] + (generic_bignum[3] << 16);
+	}
+
+	if(hi32.X_add_number == 0)
+		freg = 0;
+	else {
+		int shift, bit;
+	
+	}
+*/
+	abort();
+}
+
+
+static void load_address(int reg, expressionS* ep){
+	if((ep->X_op != O_constant) && (ep->X_op != O_symbol)){
+		as_bad(_("expression should be constant or symbol. can't knock on a door without an address"));	
+		ep->X_op = O_constant;
+	}
+	if(ep->X_op == O_constant){
+		load_register(reg, ep, HAVE_64BIT_ADDRESSES);
+		return;
+	} else{
+//		expressionS ex;
+		if(ep->X_add_number){
+			//ex.X_add_number = ep->X_add_number;
+			//ep->X_add_number = 0;
+			macro_build(ep, "li", "d,i", reg, BFD_RELOC_16);
+			macro_build(ep, "lui", "d,i", reg, BFD_RELOC_FUSION_HI16);
+
+		}
+	} 
+}
+/*
 static symbolS* make_internal_label(void){
 	return (symbolS *) local_symbol_make(FAKE_LABEL_NAME, now_seg,
 					(valueT) frag_now_fix(), frag_now);
 }
-
+*/
 /*pc relative access*/
-
+/*
 static void pcrel_access(int destreg, int tempreg, expressionS *ep,
 					const char* insn_name, const char* op_str,
 					bfd_reloc_code_real_type hi_reloc,
@@ -564,16 +649,20 @@ static void pcrel_load(int destreg, int tempreg, expressionS* ep,
 	pcrel_access(destreg, tempreg, ep, insn_name, "d,s,j", hi_reloc,
 							lo_reloc);
 }
+*/
 
-
-static void fusion_call(int tmp, expressionS *ep,
-				bfd_reloc_code_real_type reloc){
-	macro_build(ep, "lui", "d, u", tmp, reloc);
-	macro_build(NULL, "jrl", "s", tmp);  //can only be placed in RA0
+static void fusion_call(int tmp, expressionS *ep){
+	macro_build(ep, "lui", "d,i", tmp, BFD_RELOC_FUSION_HI16);
+	macro_build(NULL, "jrl", "j", tmp, BFD_RELOC_FUSION_21);  //can only be placed in RA0
 
 }
 
+static void fusion_return(int reg, expressionS* ep){
+	macro_build(ep, "jr", "j", reg, BFD_RELOC_FUSION_21);
+}
+
 /*load integer constant into register */
+/*
 static void load_const(int reg, expressionS* ep){
 	int shift = 0; //not sure what to do with this?
 	expressionS upper = *ep, lower = *ep;
@@ -587,22 +676,22 @@ static void load_const(int reg, expressionS* ep){
 	
 	int hi_reg = 0;
 	if(upper.X_add_number != 0){
-		/* add lui insn*/
+		// add lui insn
 		macro_build(ep, "lui", "d, u", reg, BFD_RELOC_FUSION_HI16);
 
 		hi_reg = reg;
 	}
 
 	if(lower.X_add_number != 0 || hi_reg == 0){
-		/*add li insn*/
+		//add li insn
 		macro_build(ep, "li", "d, u", reg, BFD_RELOC_16); 
 	}
 
 }
-
+*/
 /*expand macro into one or more instructions*/
-static void macro(struct fusion_cl_insn *ip, expressionS* imm_expr,
-				bfd_reloc_code_real_type* imm_reloc){
+static void macro(struct fusion_cl_insn *ip, expressionS* imm_expr){//,
+				//bfd_reloc_code_real_type* imm_reloc){
 	int rd = GET_RD( (ip->insn_word));	
 	int rsa = GET_RSA( (ip->insn_word) );
 //	int rsb = GET_RSB( (ip->insn_word) );
@@ -614,16 +703,20 @@ static void macro(struct fusion_cl_insn *ip, expressionS* imm_expr,
 	} else{
 		switch(macro_id){
 			case M_LA:
-				if(!IS_SEXT_32BIT_NUM(imm_expr->X_add_number))
-					as_bad(_("immediate value too large"));
-				if(imm_expr->X_op == O_constant)	
-					load_const(rd, imm_expr);
-				else
-					pcrel_load(rd, rd, imm_expr, "li", BFD_RELOC_HI16_PCREL,
-									BFD_RELOC_16_PCREL);
+				//if(!IS_SEXT_32BIT_NUM(imm_expr->X_add_number))
+				//	as_bad(_("immediate value too large"));
+				//if(imm_expr->X_op == O_constant)	
+				//	load_const(rd, imm_expr);
+				//else
+					//pcrel_load(rd, rd, imm_expr, "li", BFD_RELOC_HI16_PCREL,
+					//				BFD_RELOC_16_PCREL);
+				load_address(rd, imm_expr);
 				break;
 			case M_CALL:
-				fusion_call(rsa, imm_expr, *imm_reloc);
+				fusion_call(rsa, imm_expr);
+				break;
+			case M_RET:
+				fusion_return(rsa, imm_expr);
 				break;
 			default:
 				as_bad(_("Macro %s not implemented"), ip->insn_mo->name);
@@ -1378,12 +1471,12 @@ bfd_boolean assemble_insn_bin(char* str, struct fusion_cl_insn* ip, expressionS*
 	if( (cpid_value) > CPID_MAX){
 		as_bad(_("Unknown co-processor instruction: %s"), op_start);
 		return FALSE;
-	} else if(cpid_value == CPID_MAIN){ //if for main processor
+	} else if((cpid_value == CPID_MAIN) || (cpid_value == CPID_MACRO)){ //if for main processor
 		
-	args = insn->args; //operands for instruction	
+		args = insn->args; //operands for instruction	
 
-	if( (args > MAX_USE_OP) ){
-		as_bad(_("Incorrect arguments, what did you do? insn: %s"), op_start);
+		if( (args > MAX_USE_OP) ){
+			as_bad(_("Incorrect arguments, what did you do? insn: %s"), op_start);
 		return FALSE;
 	}
 
@@ -1488,37 +1581,37 @@ bfd_boolean assemble_insn_bin(char* str, struct fusion_cl_insn* ip, expressionS*
 					break;	
 				/*Load Immeidate Instructions*/
 				case OPC_LI:
-					//check_absolute_expr(ip, imm_expr);
-					ip->insn_word = MAKE_LI_TYPE(Rd, insn->index, imm);
-					break;
-				/*Jump Instruction*/
-				case OPC_JMP:
-					if(RSa != 0)
-						*imm_reloc = BFD_RELOC_FUSION_21;
-					ip->insn_word = MAKE_J_TYPE(RSa, imm);
-					break;
-				/*Jump Link Instruction*/
-				case OPC_JLNK:
-					if(RSa != 0)
-						*imm_reloc = BFD_RELOC_FUSION_21;
-					ip->insn_word = MAKE_JL_TYPE(RSa, imm);
-					break;
-				/*Branch Instructions*/
-				case OPC_BRANCH:
-					ip->insn_word = MAKE_B_TYPE(RSa, RSb, imm, insn->index);
-					break;
-				/*System Instrucitons*/
-				case OPC_SYS:
-					ip->insn_word = MAKE_SYS_TYPE(Rd, RSa, insn->index, imm);
-					break;
-				case 0x00:
-					ip->insn_word = 0x00000000; //since nop
-					break;
-				/*Unknown Instructions*/
-				default:
-					as_bad(_("Unknown opcode, \
-						how did you manage that?: %s"), op_start);
-					ip->insn_word = 0x00000000;
+							//check_absolute_expr(ip, imm_expr);
+							ip->insn_word = MAKE_LI_TYPE(Rd, insn->index, imm);
+							break;
+						/*Jump Instruction*/
+						case OPC_JMP:
+							if(RSa != 0)
+								*imm_reloc = BFD_RELOC_FUSION_21;
+							ip->insn_word = MAKE_J_TYPE(RSa, imm);
+							break;
+						/*Jump Link Instruction*/
+						case OPC_JLNK:
+							if(RSa != 0)
+								*imm_reloc = BFD_RELOC_FUSION_21;
+							ip->insn_word = MAKE_JL_TYPE(RSa, imm);
+							break;
+						/*Branch Instructions*/
+						case OPC_BRANCH:
+							ip->insn_word = MAKE_B_TYPE(RSa, RSb, imm, insn->index);
+							break;
+						/*System Instrucitons*/
+						case OPC_SYS:
+							ip->insn_word = MAKE_SYS_TYPE(Rd, RSa, insn->index, imm);
+							break;
+						case 0x00:
+							ip->insn_word = 0x00000000; //since nop
+							break;
+						/*Unknown Instructions*/
+						default:
+							as_bad(_("Unknown opcode, \
+								how did you manage that?: %s"), op_start);
+							ip->insn_word = 0x00000000;
 					break;
 					
 			}
@@ -1577,7 +1670,7 @@ void md_assemble(char* str){
 		return;
 	}
 	if(ip.insn_mo->cpid == CPID_MACRO){
-		macro(&ip, &imm_expr, &imm_reloc);
+		macro(&ip, &imm_expr);//, &imm_reloc);
 	} else if(ip.insn_mo->cpid == CPID_MAIN){
 		append_insn(&ip, &imm_expr, imm_reloc);
 	}else{
@@ -1631,10 +1724,10 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 //	as_warn(_("In md_apply_fix"));
 //	max = min = 0;
 	switch(fixP->fx_r_type){
-		case BFD_RELOC_FUSION_HI16:
 		case BFD_RELOC_32:
-		case BFD_RELOC_16:
 		case BFD_RELOC_8:
+		case BFD_RELOC_FUSION_HI16:
+		case BFD_RELOC_16:
 		case BFD_RELOC_FUSION_STORE:
 		case BFD_RELOC_FUSION_LOAD:
 		case BFD_RELOC_FUSION_21:
@@ -1643,7 +1736,6 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 			if(fixP->fx_addsy == NULL)
 				fixP->fx_done = TRUE;
 			break;
-
 		case BFD_RELOC_FUSION_12:
 			bfd_putb32( (fusion_apply_const_reloc(fixP->fx_r_type, *valP) ) |
 				bfd_getb32(buf), buf);
@@ -1746,13 +1838,13 @@ arelent *tc_gen_reloc(asection* section ATTRIBUTE_UNUSED, fixS *fixp){
 		reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
 	} else {
 		reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
+		reloc->addend = fixp->fx_addnumber;
 	}
 	as_warn(_("Reloc address: %x"), (unsigned int) (reloc->address));
 	reloc->howto = bfd_reloc_type_lookup(stdoutput, fixp->fx_r_type);
 
 	if(reloc->howto == NULL){
 		as_bad_where(fixp->fx_file, fixp->fx_line, _("Cannot represent relocation type %s"),bfd_get_reloc_code_name(fixp->fx_r_type));
-		/*set to garbage value to continue usage*/
 		return NULL;
 	}
 	return reloc;
