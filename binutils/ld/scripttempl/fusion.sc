@@ -10,7 +10,7 @@
 
 
 
-test -x "$ENTRY" && ENTRY=_start
+test -z "$ENTRY" && ENTRY=__start
 
 #if [ -z "$EMBEDDED" ]; then
 #	test -z "$TEXT_START_ADDR" && TEXT_START_ADDR = "0x40000"
@@ -24,13 +24,11 @@ else
 fi
 cat <<EOF
 
- OUTPUT_FORMAT("{OUTPUT_FORMAT}")
- OUTPUT_ARCH(${ARCH})
+OUTPUT_FORMAT("{OUTPUT_FORMAT}")
+OUTPUT_ARCH(${ARCH})
 
 ${LIB_SEARCH_DIRS}
-
 ${RELOCATING+ENTRY(${ENTRY})}
-
 #MEMORY
 #{
 #		rom			: ORIGIN = ${TEXT_START_ADDRESS}		LENGTH = 2G
@@ -51,7 +49,7 @@ SECTIONS
 		*(.fini)
 		${RELOCATING+ etext = . };
 		${RELOCATING+ _etext = . };
-	} #${RELOCATING+ > ram} 
+	} ${RELOCATING+ > ram} 
 	. = ${DATA_START};
 	${RELOCATING+. = ${DATA_ADDR};}
 	.rdata :{
@@ -59,8 +57,8 @@ SECTIONS
 	}
 	${RELOCATING+ _fdata = ALIGN(32);}
 	.data ALIGN(4) : {
-		*(.data)
 		. = ALIGN(4);
+		*(.data)
 		${CONSTRUCTING+CONSTRUCTORS}
 	}
 	.sdata : {

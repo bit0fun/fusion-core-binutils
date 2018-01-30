@@ -5,7 +5,8 @@ if [ !  -d "./build" ]; then
 fi
 
 cd build
-../configure --target=fusion-elf --prefix=/home/bit0fun/binutils-test #--enable-maintainer-mode
+#../configure --target=fusion-elf --prefix=/home/bit0fun/binutils-test #--enable-maintainer-mode
+../configure --target=fusion-elf --prefix=/opt/fusion-core-tools
 make clean
 make -j4
-make install
+sudo make install
