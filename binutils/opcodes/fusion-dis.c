@@ -94,13 +94,18 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 			/*Unsigned output*/
 			case 2: //addui
 			case 3: //subui
-			case 4: //noti
 			case 5: //andi
 			case 6: //ori
 			case 7: //xori
 				fpr(stream, "%s\t$%s, $%s, 0x%03x", insn->name,\
 					fusion_gpreg_name[ GET_RD(insn_word) ],\
 					fusion_gpreg_name[ GET_RSA(insn_word) ],\
+					GET_IMM_I(insn_word) );
+				break;
+			//this is a special one, since we don't care about another operand
+			case 4: //noti
+				fpr(stream, "%s\t$%s, 0x%03x", insn->name,\
+					fusion_gpreg_name[ GET_RD(insn_word) ],\
 					GET_IMM_I(insn_word) );
 				break;
 			default:
