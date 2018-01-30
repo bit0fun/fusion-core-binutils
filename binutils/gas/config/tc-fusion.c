@@ -489,7 +489,13 @@ static void macro_build(expressionS *ep, const char* name, const char* fmt, ...)
 	r = BFD_RELOC_UNUSED;
 	mo = (struct fusion_opc_info_t* ) hash_find(op_hash_ctrl, name);
 	gas_assert(strcmp(name, mo->name) == 0); //make sure we found the right instruction
+
+	#ifdef DEBUG
+	as_warn(_("Macro name found: %s"), mo->name);
+	#endif
+
 	create_insn(&insn, mo);
+	insn.insn_word = 0; //clear insn to make sure it doesn't have extra numbers
 	/*this may change, but is copied off of riscv for now*/
 	INSERT_OPERAND(GEN_OPC(mo->opc), insn);
 	if((mo->opc) == OPC_LI) {
@@ -502,7 +508,9 @@ static void macro_build(expressionS *ep, const char* name, const char* fmt, ...)
 		INSERT_OPERAND(GEN_FUNCT_S(mo->index), insn);	
 	}
 	for(;;){
+		#ifdef DEBUG
 		as_warn(_("Current argument: %c"), *fmt);
+		#endif
 		switch(*fmt++){
 			case 'd':
 				INSERT_OPERAND( GEN_RD( va_arg(args, int) ) , insn );
@@ -517,8 +525,8 @@ static void macro_build(expressionS *ep, const char* name, const char* fmt, ...)
 				INSERT_OPERAND( GEN_RSB( va_arg(args, int) ) , insn );
 				continue;
 			case 's': //small immediate
-				INSERT_OPERAND( GEN_I_IMM( va_arg(args, int) ), insn);
-				continue;
+//				INSERT_OPERAND( GEN_I_IMM( va_arg(args, int) ), insn);
+//				continue;
 			case 'i': //load immedate/lower 16
 			case 'u': //load immediate/upper 16
 			case 'j': //jump immediate
@@ -621,30 +629,6 @@ static void load_register(int reg, expressionS* ep, int dlb){
 	abort();
 }
 
-*/
-static void load_address(int reg, expressionS* ep){
-//	if((ep->X_op != O_constant) && (ep->X_op != O_symbol)){
-//		as_bad(_("expression should be constant or symbol. can't knock on a door without an address"));	
-//		ep->X_op = O_constant;
-//	}
-//	if(ep->X_op == O_constant){
-//		as_warn(_("Load address op is constant"));
-//		load_register(reg, ep, HAVE_64BIT_ADDRESSES);
-//		return;
-//	} else{
-//		as_warn(_("Load address op is a symbol"));
-//		expressionS ex;
-//		if(ep->X_add_number){
-			//ex.X_add_number = ep->X_add_number;
-			//ep->X_add_number = 0;
-	
-			macro_build(ep, "li", "d,i", reg, BFD_RELOC_16);
-			macro_build(ep, "lui", "d,i", reg, BFD_RELOC_FUSION_HI16);
-
-//		}
-//	} 
-}
-/*
 static symbolS* make_internal_label(void){
 	return (symbolS *) local_symbol_make(FAKE_LABEL_NAME, now_seg,
 					(valueT) frag_now_fix(), frag_now);
@@ -675,22 +659,29 @@ static void pcrel_load(int destreg, int tempreg, expressionS* ep,
 }
 */
 static void fusion_call(int tmp, expressionS *ep){
-	macro_build(ep, "lui", "d,i", tmp, BFD_RELOC_FUSION_HI16);
+	//load_address(tmp, ep);
+	expressionS upper = *ep;
+	expressionS lower = *ep;
+	lower.X_add_number = (int32_t) (ep->X_add_number) & 0x0000ffff;
+	upper.X_add_number -= lower.X_add_number;
+
+	macro_build(&upper, "lui", "d,i", tmp, BFD_RELOC_FUSION_HI16);
 	as_warn(_("Finished building lui for fusion_call"));
-	macro_build(NULL, "jrl", "d", tmp);  //can only be placed in RA0
+	macro_build(&lower, "jrl", "a,j", tmp, BFD_RELOC_FUSION_21);  //can only be placed in RA0
 	as_warn(_("Finished building jrl for fusion_call"));
 
 }
 
-static void fusion_return(int reg, expressionS* ep){
-	macro_build(ep, "jr", "j", reg, BFD_RELOC_FUSION_21);
+static void fusion_return( expressionS* ep){
+	ep->X_add_number = 0x0; //don't want any offsets here; need one since it would throw a hissie fit otherwise
+	macro_build(ep, "jr", "a,j", 4, BFD_RELOC_FUSION_21);
 }
 
 /*load integer constant into register */
 static void load_const(int reg, expressionS* ep){
-	int shift = 0; //not sure what to do with this?
+//	int shift = 16; 
 	expressionS upper = *ep, lower = *ep;
-	lower.X_add_number = (int32_t) ep->X_add_number << (32-shift) >> (32-shift);
+	lower.X_add_number = ((uint32_t) ep->X_add_number) & 0xffff;// << (32-shift) >> (32-shift);
 	upper.X_add_number -= lower.X_add_number;
 
 	if(ep->X_op != O_constant){
@@ -712,11 +703,28 @@ static void load_const(int reg, expressionS* ep){
 	}
 
 }
+static void load_address(int reg, expressionS* ep){
+	if((ep->X_op != O_constant) && (ep->X_op != O_symbol)){
+		as_bad(_("expression should be constant or symbol. can't knock on a door without an address"));	
+		ep->X_op = O_constant;
+	}
+	if(ep->X_op == O_constant){
+		load_const(reg, ep);
+		return;
+	} else{
+		if((IS_SEXT_32BIT_NUM(ep->X_add_number))) {
+			macro_build(ep, "lui", "d,i", reg, BFD_RELOC_FUSION_HI16);
+			macro_build(ep, "li", "d,i", reg, BFD_RELOC_16);
+			return;
+		}
+	} 
+}
+
 /*expand macro into one or more instructions*/
 static void macro(struct fusion_cl_insn *ip, expressionS* imm_expr){//,
 				//bfd_reloc_code_real_type* imm_reloc){
 	int rd = GET_RD( (ip->insn_word));	
-	int rsa = GET_RSA( (ip->insn_word) );
+//	int rsa = GET_RSA( (ip->insn_word) );
 //	int rsb = GET_RSB( (ip->insn_word) );
 	int cpid = ip->insn_mo->cpid;
 	int macro_id =(int) ip->insn_mo->index;
@@ -727,25 +735,16 @@ static void macro(struct fusion_cl_insn *ip, expressionS* imm_expr){//,
 		switch(macro_id){
 			case M_LA:
 				as_warn("Making la macro");
-				if(!IS_SEXT_32BIT_NUM(imm_expr->X_add_number))
-					as_bad(_("immediate value too large"));
-				if(imm_expr->X_op == O_constant){	
-					as_warn(_("Address is an immediate"));
-					load_const(rd, imm_expr);
-				}
-				else
-				//	pcrel_load(rd, rd, imm_expr, "li", BFD_RELOC_HI16_PCREL,
-				//				BFD_RELOC_16_PCREL);
 				load_address(rd, imm_expr);
 
 				break;
 			case M_CALL:
 				as_warn("Making call macro");
-				fusion_call(rsa, imm_expr);
+				fusion_call(22, imm_expr); //uses tmp0
 				break;
 			case M_RET:
 				as_warn("Making return macro");
-				fusion_return(rsa, imm_expr);
+				fusion_return( imm_expr); //uses ra
 				break;
 			default:
 				as_bad(_("Macro %s not implemented"), ip->insn_mo->name);
@@ -955,7 +954,7 @@ static int parse_register_operand(char** ptr){
 			ignore_rest_of_line();
 			return -1;
 		} else{
-			if( reg == 1) { //need to check if 10
+			if( s[3] == 1) { //need to check if 10
 				reg = (s[4] - '0') + 10; 	
 				if(reg != 10){ //only option at the moment
 					as_bad(_("illegal general use register"));	
@@ -974,7 +973,7 @@ static int parse_register_operand(char** ptr){
 			 
 	 } else if ( (s[1] == 't') && (s[2] == 'm') 
 				&& (s[3] == 'p')  ){
-			if( !((s[4] == ' ') || (s[4] == '\t') || (s[4] == ',')) ){
+			if( !((s[5] == ' ') || (s[5] == '\t') || (s[5] == ',') || (s[5] == ')'))){
 				as_bad(_("not a real register: %s"), s);	
 			}
 			reg = s[4] - '0'; 
@@ -1309,22 +1308,27 @@ int parse_rai_offset(int *rsa, int* imm, char** op_end, expressionS* imm_expr, b
 		(*op_end)++;
 
 	parse_imm(imm, op_end, imm_expr, reloc, ip);
+	if(ip->insn_mo->cpid != CPID_MACRO){ //GAS freaks out for macro instructions
 	while( (**op_end != '(')){
 		if(**op_end == '\0'){
-			as_bad(_("xpecting `(' before end"));
+			as_bad(_("expecting `(' before end"));
 			return -1;
 		}
 		(*op_end)++;
 	}
 	(*op_end)++;
+	
 	*rsa = parse_register_operand(op_end);
+	}
 	(*op_end)++;
-//	if(*op_end != ')'){
-//		as_bad(_("expecting `)' after register: %s"), op_end);
-//	}
+	
 	while( (**op_end == ' ') || (**op_end == '\t') || (**op_end == ')'))
 		(*op_end)++;
-
+//	if(**op_end != ')'){
+//		as_bad(_("expecting `)' after register: %s"), *op_end);
+//	} else {
+//		(*op_end)++;
+//	}
 	if(**op_end != '\0')
 		as_warn(_("ignored rest of line: %s"), *op_end);
 	return 0;
@@ -1390,6 +1394,7 @@ bfd_reloc_code_real_type return_reloc(fusion_opc_info_t* insn, char* str){
 	insn_t opc = insn->opc;
 	insn_t dsel = insn->index; 	//for li insns
 	insn_t usereg = insn->index; //for jump insns
+	unsigned cpid_value = insn->cpid;
 	bfd_reloc_code_real_type ret_reloc = BFD_RELOC_UNUSED;
 
 	/*Determine which instruction kind*/
@@ -1403,7 +1408,7 @@ bfd_reloc_code_real_type return_reloc(fusion_opc_info_t* insn, char* str){
 			break;
 		/*Load Instructions*/
 		case OPC_LD:
-					ret_reloc = BFD_RELOC_FUSION_LOAD;
+			ret_reloc = BFD_RELOC_FUSION_LOAD;
 			break;
 		/*Store Instructions*/	
 		case OPC_ST:
@@ -1428,6 +1433,10 @@ bfd_reloc_code_real_type return_reloc(fusion_opc_info_t* insn, char* str){
 			break;
 		/*Jump Instruction*/
 		case OPC_JMP:
+			if(cpid_value == CPID_MACRO){
+				ret_reloc = BFD_RELOC_FUSION_21;
+				break;
+			}
 			switch(usereg){
 				case 0:	
 					ret_reloc = BFD_RELOC_FUSION_21_PCREL;
@@ -1442,6 +1451,10 @@ bfd_reloc_code_real_type return_reloc(fusion_opc_info_t* insn, char* str){
 			break;
 		/*Jump Link Instruction*/
 		case OPC_JLNK:
+			if(cpid_value == CPID_MACRO){
+				ret_reloc = BFD_RELOC_FUSION_21;
+				break;
+			}
 			switch(usereg){
 				case 0:	
 					ret_reloc = BFD_RELOC_FUSION_21_PCREL;
@@ -1585,74 +1598,74 @@ bfd_boolean assemble_insn_bin(char* str, struct fusion_cl_insn* ip, expressionS*
 	}
 
 
-			/*Temporary immediate value, until relocatations are finalized*/
-//			int imm_tmp = 0;//0xdeadbeef;
+	/*Temporary immediate value, until relocatations are finalized*/
+//	int imm_tmp = 0;//0xdeadbeef;
 
-			/*Determine which instruction kind*/
-			switch(opc){
-				/*Integer Instructions*/
-				case OPC_INT:
-			//		imm_expr->X_op = O_absent;
-					ip->insn_word = MAKE_R_TYPE(Rd, RSa, RSb, 0, insn->index );
+	/*Determine which instruction kind*/
+	switch(opc){
+		/*Integer Instructions*/
+		case OPC_INT:
+	//		imm_expr->X_op = O_absent;
+			ip->insn_word = MAKE_R_TYPE(Rd, RSa, RSb, 0, insn->index );
+			break;
+		/*Immediate Instructions*/
+		case OPC_IMM:
+			check_absolute_expr(ip, imm_expr);
+	//		imm_expr->X_op = O_constant;
+			ip->insn_word = MAKE_I_TYPE(Rd, RSa, imm , insn->index);
+			break;
+		/*Load Instructions*/
+		case OPC_LD:
+			ip->insn_word = MAKE_L_TYPE(Rd, RSa, insn->index, imm);
+			break;
+		/*Store Instructions*/	
+		case OPC_ST:
+			 ip->insn_word = MAKE_S_TYPE(insn->index, RSa, RSb, imm);
+			break;	
+		/*Load Immeidate Instructions*/
+		case OPC_LI:
+					//check_absolute_expr(ip, imm_expr);
+					ip->insn_word = MAKE_LI_TYPE(Rd, insn->index, imm);
 					break;
-				/*Immediate Instructions*/
-				case OPC_IMM:
-					check_absolute_expr(ip, imm_expr);
-			//		imm_expr->X_op = O_constant;
-					ip->insn_word = MAKE_I_TYPE(Rd, RSa, imm , insn->index);
+				/*Jump Instruction*/
+				case OPC_JMP:
+					if(RSa != 0)
+						*imm_reloc = BFD_RELOC_FUSION_21;
+					ip->insn_word = MAKE_J_TYPE(RSa, imm);
 					break;
-				/*Load Instructions*/
-				case OPC_LD:
-					ip->insn_word = MAKE_L_TYPE(Rd, RSa, insn->index, imm);
+				/*Jump Link Instruction*/
+				case OPC_JLNK:
+					if(RSa != 0)
+						*imm_reloc = BFD_RELOC_FUSION_21;
+					ip->insn_word = MAKE_JL_TYPE(RSa, imm);
 					break;
-				/*Store Instructions*/	
-				case OPC_ST:
-					 ip->insn_word = MAKE_S_TYPE(insn->index, RSa, RSb, imm);
-					break;	
-				/*Load Immeidate Instructions*/
-				case OPC_LI:
-							//check_absolute_expr(ip, imm_expr);
-							ip->insn_word = MAKE_LI_TYPE(Rd, insn->index, imm);
-							break;
-						/*Jump Instruction*/
-						case OPC_JMP:
-							if(RSa != 0)
-								*imm_reloc = BFD_RELOC_FUSION_21;
-							ip->insn_word = MAKE_J_TYPE(RSa, imm);
-							break;
-						/*Jump Link Instruction*/
-						case OPC_JLNK:
-							if(RSa != 0)
-								*imm_reloc = BFD_RELOC_FUSION_21;
-							ip->insn_word = MAKE_JL_TYPE(RSa, imm);
-							break;
-						/*Branch Instructions*/
-						case OPC_BRANCH:
-							ip->insn_word = MAKE_B_TYPE(RSa, RSb, imm, insn->index);
-							break;
-						/*System Instrucitons*/
-						case OPC_SYS:
-							ip->insn_word = MAKE_SYS_TYPE(Rd, RSa, insn->index, imm);
-							break;
-						case 0x00:
-							ip->insn_word = 0x00000000; //since nop
-							break;
-						/*Unknown Instructions*/
-						default:
-							as_bad(_("Unknown opcode, \
-								how did you manage that?: %s"), op_start);
-							ip->insn_word = 0x00000000;
+				/*Branch Instructions*/
+				case OPC_BRANCH:
+					ip->insn_word = MAKE_B_TYPE(RSa, RSb, imm, insn->index);
 					break;
-					
-			}
-			} else{
-				as_bad (_("No co-processor instructions exist yet, don't know \
-							what this is: %s"), op_start);
-				return FALSE;
-			}
+				/*System Instrucitons*/
+				case OPC_SYS:
+					ip->insn_word = MAKE_SYS_TYPE(Rd, RSa, insn->index, imm);
+					break;
+				case 0x00:
+					ip->insn_word = 0x00000000; //since nop
+					break;
+				/*Unknown Instructions*/
+				default:
+					as_bad(_("Unknown opcode, \
+						how did you manage that?: %s"), op_start);
+					ip->insn_word = 0x00000000;
+			break;
+			
+	}
+	} else{
+		as_bad (_("No co-processor instructions exist yet, don't know \
+					what this is: %s"), op_start);
+		return FALSE;
+	}
 
-			return TRUE;
-		}
+	return TRUE;
+}
 
 
 
@@ -1760,15 +1773,14 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 		case BFD_RELOC_16:
 		case BFD_RELOC_FUSION_STORE:
 		case BFD_RELOC_FUSION_LOAD:
-		case BFD_RELOC_FUSION_21:
-			bfd_putb32( fusion_apply_const_reloc(fixP->fx_r_type, *valP) |
-				bfd_getb32(buf), buf);
+//		case BFD_RELOC_FUSION_21:
+		as_warn(_("Const_reloc: %08lx"), (unsigned long int)fusion_apply_const_reloc(fixP->fx_r_type, *valP));
+			bfd_putb32( fusion_apply_const_reloc(fixP->fx_r_type, *valP) | bfd_getb32(buf), buf);
 			if(fixP->fx_addsy == NULL)
 				fixP->fx_done = TRUE;
 			break;
 		case BFD_RELOC_FUSION_12:
-			bfd_putb32( (fusion_apply_const_reloc(fixP->fx_r_type, *valP) ) |
-				bfd_getb32(buf), buf);
+			bfd_putb32( (fusion_apply_const_reloc(fixP->fx_r_type, *valP) ) | bfd_getb32(buf), buf);
 			if(fixP->fx_addsy == NULL)
 				fixP->fx_done = TRUE;
 			break;
@@ -1842,6 +1854,24 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 //				as_warn(_("Using fx_addsy"));
 			}
 			break;
+		case BFD_RELOC_FUSION_21:
+			if(!*valP)
+				break;
+			if(fixP->fx_addsy != NULL){
+				as_warn(_("using addsy; jr offset"));
+				bfd_vma target = (S_GET_VALUE(fixP->fx_addsy) + *valP);
+				as_warn(_("Target: %08lx"), (unsigned long)target);
+				as_warn(_("Imm value: %08lx"), (unsigned long)GEN_J_IMM(target));
+				if( ((unsigned long) target) > 0x001fffff){
+					as_bad_where(fixP->fx_file, fixP->fx_line,_("too large jump offset"));
+				}
+				bfd_putb32( (bfd_getb32(buf) ) | (GEN_J_IMM(target) ), buf );
+			} else {
+				as_warn(_("using constant reloc; jr offset"));
+				bfd_putb32( fusion_apply_const_reloc(fixP->fx_r_type, *valP) | bfd_getb32(buf), buf);
+				fixP->fx_done = TRUE;
+			}
+			break;
 		default:
 			as_fatal(_("Unknown reloc code: %d. Please report this to the devs"), (unsigned int) fixP->fx_r_type);
 			//abort();
@@ -1868,6 +1898,11 @@ arelent *tc_gen_reloc(asection* section ATTRIBUTE_UNUSED, fixS *fixp){
 		reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
 	}	else if (fixp->fx_r_type ==  BFD_RELOC_FUSION_14_PCREL){
 		reloc->addend = (fixp->fx_frag->fr_address + md_pcrel_from(fixp));
+		reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
+	} else if(fixp->fx_r_type == BFD_RELOC_FUSION_21 ) {
+		as_warn(_("fx_addnumber: %08lx"),(unsigned long int) fixp->fx_addnumber);
+		as_warn(_("GEN_J_IMM(fx_addnumber): %08lx"),(unsigned long int) GEN_J_IMM(fixp->fx_addnumber));
+		reloc->addend  = fixp->fx_addnumber;//GEN_J_IMM(fixp->fx_addnumber) ;
 		reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
 	} else {
 		reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;

@@ -27,6 +27,7 @@
 #include "opcode/fusion.h"
 #include "elf-bfd.h"
 #include "elf/fusion.h"
+#include "opcode/fusion-opc.h"
 
 static reloc_howto_type fusion_elf_howto_table[] = {
 	/*Relocation does nothing*/
@@ -70,8 +71,8 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			bfd_elf_generic_reloc,		/*special_function*/
 			"R_FUSION_LI",				/*name*/
 			FALSE,						/*partial_inplace*/
-			0,	/*src_mask*/
-			0x0000ffff,	/*dst_mask*/
+			0xffffffff,							/*src_mask*/
+			0,//0x0000ffff,					/*dst_mask*/
 			FALSE),						/*pcrel_offset*/
 	/*Load Upper Immediate constant relocation*/
 	HOWTO (R_FUSION_LUI,				/* Type */
@@ -99,10 +100,10 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			"R_FUSION_LI_PCREL",		/*name*/
 			FALSE,						/*partial_inplace*/
 			0x00000000,					/*src_mask*/
-			GET_IMM_LI(MASK_IMM_LI),	/*dst_mask*/
+			GEN_LI_IMM(MASK_IMM_LI),	/*dst_mask*/
 			TRUE),						/*pcrel_offset*/
 	/*Load Upper Immediate PC relative relocation*/
-	HOWTO (R_FUSION_LUI_PCREL,				/* Type */
+	HOWTO (R_FUSION_LUI_PCREL,			/* Type */
 			0,							/*rightshift*/
 			2,							/*size*/
 			32,							/*bit size*/
@@ -110,10 +111,10 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			0,							/*bit position*/
 			complain_overflow_dont,		/*complain on overflow*/
 			bfd_elf_generic_reloc,		/*special_function*/
-			"R_FUSION_LUI_PCREL",				/*name*/
+			"R_FUSION_LUI_PCREL",		/*name*/
 			FALSE,						/*partial_inplace*/
 			0x00000000,					/*src_mask*/
-			GET_IMM_LI(MASK_IMM_LI),	/*dst_mask*/
+			GEN_LI_IMM(MASK_IMM_LI),	/*dst_mask*/
 			TRUE),						/*pcrel_offset*/
 	/*System constant relocation*/
 	HOWTO (R_FUSION_SYS,				/* Type */
@@ -126,8 +127,8 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			bfd_elf_generic_reloc,		/*special_function*/
 			"R_FUSION_SYS",				/*name*/
 			FALSE,						/*partial_inplace*/
-			0x00000000,					/*src_mask*/
-			GET_IMM_SYS(MASK_IMM_SYS),	/*dst_mask*/
+			0xffffffff,					/*src_mask*/
+			0,							/*dst_mask*/
 			FALSE),						/*pcrel_offset*/
 	/*System constant relocation*/
 	HOWTO (R_FUSION_I,					/* Type */
@@ -140,8 +141,8 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			bfd_elf_generic_reloc,		/*special_function*/
 			"R_FUSION_I",				/*name*/
 			FALSE,						/*partial_inplace*/
-			GET_IMM_I(MASK_IMM_I),		/*src_mask*/
-			MASK_IMM_I,					/*dst_mask*/
+			0xffffffff,					/*src_mask*/
+			0,//GEN_I_IMM(MASK_IMM_I),		/*dst_mask*/
 			FALSE),						/*pcrel_offset*/
 
 	/*Local Symbol relative relocation*/
@@ -171,8 +172,8 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			bfd_elf_generic_reloc,		/*special_function*/
 			"R_FUSION_LOAD",			/*name*/
 			FALSE,						/*partial_inplace*/
-			0x00000000,					/*src_mask*/
-			GET_IMM_L(MASK_IMM_L),		/*dst_mask*/
+			0xffffffff,					/*src_mask*/
+			0,							/*dst_mask*/
 			FALSE),						/*pcrel_offset*/
 	/*14 Bit Load Relocation*/
 	HOWTO (R_FUSION_STORE,
@@ -185,8 +186,8 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			bfd_elf_generic_reloc,		/*special_function*/
 			"R_FUSION_STORE",			/*name*/
 			FALSE,						/*partial_inplace*/
-			0x00000000,					/*src_mask*/
-			GET_IMM_S(MASK_IMM_S),		/*dst_mask*/
+			0xffffffff,					/*src_mask*/
+			0,							/*dst_mask*/
 			FALSE),						/*pcrel_offset*/
 
 
@@ -201,8 +202,8 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			bfd_elf_generic_reloc,		/*special_function*/
 			"R_FUSION_BRANCH",			/*name*/
 			FALSE,						/*partial_inplace*/
-			0x3fff,					/*src_mask*/
-			0x3fff,		/*dst_mask*/
+			0xffff,					/*src_mask*/
+			0,		/*dst_mask*/
 			TRUE),						/*pcrel_offset*/
 	/*21 Bit PC Relative Jump*/
 	HOWTO (R_FUSION_JUMP,
@@ -215,8 +216,8 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			bfd_elf_generic_reloc,		/*special_function*/
 			"R_FUSION_JUMP",			/*name*/
 			FALSE,						/*partial_inplace*/
-			0x001fffff,					/*src_mask*/
-			0x001fffff,					/*dst_mask*/
+			0xffffffff,					/*src_mask*/
+			0,							/*dst_mask*/
 			TRUE),						/*pcrel_offset*/
 	/*21 Bit PC Relative Jump Register*/
 	HOWTO (R_FUSION_JUMP_O,
@@ -229,8 +230,8 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			bfd_elf_generic_reloc,		/*special_function*/
 			"R_FUSION_JUMP_O",			/*name*/
 			FALSE,						/*partial_inplace*/
-			0x001fffff,					/*src_mask*/
-			0x001fffff,					/*dst_mask*/
+			0xffffffff,					/*src_mask*/
+			0,							/*dst_mask*/
 			FALSE),						/*pcrel_offset*/
 };
 

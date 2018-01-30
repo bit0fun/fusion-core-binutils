@@ -29,6 +29,11 @@
 #include "opintl.h"
 #include "elf-bfd.h"
 
+#define SEXT_14B(N)			( ((N) & 0x3fff) | ( ( ((N) & 0x2000) ? 0xffffd000 : 0 ) ) )
+#define SEXT_12B(N)			( ((N) & 0xfff ) | ( ( ((N) & 0x800 ) ? 0xfffff000 : 0 ) ) )
+#define SEXT_21B(N)			( ((N) & 0x1ffff) | ( ( ((N) & 0x10000) ? 0xfffe0000 : 0 ) ) )
+
+
 //extern const fusion_inst_t fusion_inst[128];
 
 //extern static const char* fusion_gpr_names;
@@ -70,10 +75,10 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 						fusion_gpreg_name[GET_RSB(insn_word)] );
 	} else if( IS_I_TYPE(insn_word) ) { //need to get alu op to determine instruction
 		insn = &fusion_insn_I[ GET_ALUOP(insn_word) ];
-		fpr(stream, "%s\t$%s, $%s, 0x%03x", insn->name,\
+		fpr(stream, "%s\t$%s, $%s, %d", insn->name,\
 						fusion_gpreg_name[ GET_RD(insn_word) ],\
 						fusion_gpreg_name[ GET_RSA(insn_word) ],\
-						GET_IMM_I(insn_word) );
+						SEXT_12B(GET_IMM_I(insn_word)) );
 				
 	} else if( IS_L_TYPE(insn_word) ) {
 		insn = &fusion_insn_L[ GET_FUNCT_L(insn_word) ];
@@ -84,9 +89,8 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 	
 	} else if( IS_LI_TYPE(insn_word) ) {
 		insn = &fusion_insn_LI[ GET_DSEL_LI(insn_word) ];
-		fpr(stream, "%s\t$%s, 0x%04x", insn->name, \
-						fusion_gpreg_name[ GET_RD(insn_word) ],\
-						GET_IMM_L(insn_word) );
+		fpr(stream, "%s\t$%s, 0x%04lx", insn->name, \
+						fusion_gpreg_name[ GET_RD(insn_word) ],(unsigned long int) GET_IMM_LI(insn_word) );
 	
 	} else if( IS_S_TYPE(insn_word) ) {
 		insn = &fusion_insn_S[ GET_FUNCT_S(insn_word) ];
@@ -98,17 +102,17 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 	} else if((opc == 0x06) || (opc == 0x07)){// else if( IS_J_TYPE(insn_word) ) {
 		if( GET_RSA(insn_word) == 0x00 ) { //if just a normal jump
 			if ( IS_JLNK_INSN( insn_word ) ) //if jump and link
-				fpr(stream, "jal\t0x%06x",  GET_IMM_J(insn_word)  );
+				fpr(stream, "jal\t%d",  SEXT_21B(GET_IMM_J(insn_word))  );
 			else if (IS_JMP_INSN( insn_word ) )
-				fpr(stream, "j\t0x%06x",  GET_IMM_J(insn_word)  );
+				fpr(stream, "j\t%d",  SEXT_21B(GET_IMM_J(insn_word))  );
 			else
 				fpr(stream, "nri"); //not a real jump
 		} else { //using register, no possible error here
 			if ( IS_JLNK_INSN( insn_word ) ) //jump register and link
-				fpr(stream, "jrl\t0x%06x($%s)",  GET_IMM_J(insn_word), \
+				fpr(stream, "jrl\t0x%06lx($%s)", (unsigned long int) GET_IMM_J(insn_word), \
 								fusion_gpreg_name[ GET_RSA(insn_word) ] );
 			else if (IS_JMP_INSN( insn_word ) ) //jump register
-				fpr(stream, "jr\t0x%06x($%s)", GET_IMM_J(insn_word), \
+				fpr(stream, "jr\t0x%06lx($%s)", (unsigned long int) GET_IMM_J(insn_word), \
 								fusion_gpreg_name[ GET_RSA(insn_word) ] );
 			else
 				fpr(stream, "nri"); //not a real jump
@@ -116,10 +120,10 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 	
 	} else if( IS_B_TYPE(insn_word) ) {
 			insn = &fusion_insn_B[ GET_FUNCT_B(insn_word) ];
-			fpr(stream, "%s\t$%s,$%s,0x%03x", insn->name,\
+			fpr(stream, "%s\t$%s,$%s,%d", insn->name,\
 							fusion_gpreg_name[ GET_RSA(insn_word) ],\
 							fusion_gpreg_name[ GET_RSB(insn_word) ],\
-							GET_IMM_B(insn_word));
+							SEXT_14B(GET_IMM_B(insn_word)) );
 	
 	} else if( IS_SYS_TYPE(insn_word) ) {
 			insn = &fusion_insn_SYS[ GET_FUNCT_SYS(insn_word) ];

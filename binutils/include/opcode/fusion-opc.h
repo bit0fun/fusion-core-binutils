@@ -11,7 +11,7 @@
 
 #define MAKE_I_TYPE(RD, RSA, IMM, ALUOP) \
 		( ( ( RD & 0x1f ) <<21 ) | ( ( RSA & 0x1f ) << 16) \
-       		| ( GEN_I_IMM(IMM) )| ( ALUOP & 0x0f ) \
+       		| ( GEN_I_IMM(IMM) ) | ( ALUOP & 0x0f ) \
 		| ( ( OPC_IMM & 0x3f ) << 26) )
 
 #define MAKE_L_TYPE(RD, RSA, FUNCT, IMM) \
