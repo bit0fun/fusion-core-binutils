@@ -75,11 +75,42 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 						fusion_gpreg_name[GET_RSB(insn_word)] );
 	} else if( IS_I_TYPE(insn_word) ) { //need to get alu op to determine instruction
 		insn = &fusion_insn_I[ GET_ALUOP(insn_word) ];
-		fpr(stream, "%s\t$%s, $%s, %d", insn->name,\
-						fusion_gpreg_name[ GET_RD(insn_word) ],\
-						fusion_gpreg_name[ GET_RSA(insn_word) ],\
-						SEXT_12B(GET_IMM_I(insn_word)) );
-				
+		insn_t aluop = insn->index;
+		/*Determine to print out signed or unsigned number*/
+		switch(aluop){
+			/*Signed output*/
+			case 0: //addi
+			case 1: //subi
+			case 8: //sali
+			case 9: //sari
+			case 10: //slli
+			case 11: //slri
+			case 12: //compi
+				fpr(stream, "%s\t$%s, $%s, %d", insn->name,\
+					fusion_gpreg_name[ GET_RD(insn_word) ],\
+					fusion_gpreg_name[ GET_RSA(insn_word) ],\
+					SEXT_12B(GET_IMM_I(insn_word)) );
+				break;
+			/*Unsigned output*/
+			case 2: //addui
+			case 3: //subui
+			case 4: //noti
+			case 5: //andi
+			case 6: //ori
+			case 7: //xori
+				fpr(stream, "%s\t$%s, $%s, 0x%03x", insn->name,\
+					fusion_gpreg_name[ GET_RD(insn_word) ],\
+					fusion_gpreg_name[ GET_RSA(insn_word) ],\
+					GET_IMM_I(insn_word) );
+				break;
+			default:
+			fpr(stream, "nri\t$%s, $%s, 0x%03x", \
+				fusion_gpreg_name[ GET_RD(insn_word) ],\
+				fusion_gpreg_name[ GET_RSA(insn_word) ],\
+				GET_IMM_I(insn_word) );
+				break;
+		}
+
 	} else if( IS_L_TYPE(insn_word) ) {
 		insn = &fusion_insn_L[ GET_FUNCT_L(insn_word) ];
 		fpr(stream, "%s\t$%s, 0x%03x(%s)", insn->name, \

@@ -54,8 +54,8 @@
 #define NUM_INSN_B			4
 #define NUM_INSN_SYS		256 //256 total instructions, only 7 at the moment
 #define NUM_INSN		( NUM_INSN_R + NUM_INSN_I + NUM_INSN_L\
-				+ NUM_INSN_LI + NUM_INSN_S + NUM_INSN_J\
-				+ NUM_INSN_JL + NUM_INSN_SYS )
+						+ NUM_INSN_LI + NUM_INSN_S + NUM_INSN_J\
+						+ NUM_INSN_JL + NUM_INSN_SYS )
 
 /**** Bit field Masks ****/
 #define MASK_RD				0x03e00000

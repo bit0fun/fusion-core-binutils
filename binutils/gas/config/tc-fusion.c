@@ -21,7 +21,7 @@
 /* Contributed by Dylan Wadler  */
 
 #define WORST_CASE	4
-#define DEBUG
+//#define DEBUG
 #define HAVE_64BIT_ADDRESSES 0 //no 64 bit addressing yet
 
 #include "as.h"
@@ -384,7 +384,8 @@ void md_begin(void) {
 	reg_names_hash = hash_new();
 	hash_reg_names(REGF_GPR, fusion_gpreg_name, 32);
 	hash_reg_names(REGF_GPR, fusion_gpreg_num, 32);
-	#define DECLARE_SYSREG(name, num)	hash_reg_name(REGF_SYS, #name, num);
+//	hash_reg_names(REGF_SYS, fusion_spreg_name, 32);
+//	#define DECLARE_SYSREG(name, num)	hash_reg_name(REGF_SYS, #name, num);
 	record_alignment(text_section, 2);
 }
 
@@ -514,14 +515,14 @@ static void macro_build(expressionS *ep, const char* name, const char* fmt, ...)
 		switch(*fmt++){
 			case 'd':
 				INSERT_OPERAND( GEN_RD( va_arg(args, int) ) , insn );
-				as_warn(_("Put register rd into insn"));
+//				as_warn(_("Put register rd into insn"));
 				continue;
 			case 'a':
 				INSERT_OPERAND( GEN_RSA( va_arg(args, int) ) , insn );
-				as_warn(_("Put register rsa into insn"));
+//				as_warn(_("Put register rsa into insn"));
 				continue;
 			case 'b':
-				as_warn(_("Put register rsb into insn"));
+//				as_warn(_("Put register rsb into insn"));
 				INSERT_OPERAND( GEN_RSB( va_arg(args, int) ) , insn );
 				continue;
 			case 's': //small immediate
@@ -666,9 +667,9 @@ static void fusion_call(int tmp, expressionS *ep){
 	upper.X_add_number -= lower.X_add_number;
 
 	macro_build(&upper, "lui", "d,i", tmp, BFD_RELOC_FUSION_HI16);
-	as_warn(_("Finished building lui for fusion_call"));
+//	as_warn(_("Finished building lui for fusion_call"));
 	macro_build(&lower, "jrl", "a,j", tmp, BFD_RELOC_FUSION_21);  //can only be placed in RA0
-	as_warn(_("Finished building jrl for fusion_call"));
+//	as_warn(_("Finished building jrl for fusion_call"));
 
 }
 
@@ -728,25 +729,26 @@ static void macro(struct fusion_cl_insn *ip, expressionS* imm_expr){//,
 //	int rsb = GET_RSB( (ip->insn_word) );
 	int cpid = ip->insn_mo->cpid;
 	int macro_id =(int) ip->insn_mo->index;
-	as_warn(_("In macro()"));
+//	as_warn(_("In macro()"));
 	if(cpid != CPID_MACRO){
 		as_bad(_("Not a macro, broken assembler"));
 	} else{
 		switch(macro_id){
 			case M_LA:
-				as_warn("Making la macro");
+//				as_warn("Making la macro");
 				load_address(rd, imm_expr);
 
 				break;
 			case M_CALL:
-				as_warn("Making call macro");
+//				as_warn("Making call macro");
 				fusion_call(22, imm_expr); //uses tmp0
 				break;
 			case M_RET:
-				as_warn("Making return macro");
+//				as_warn("Making return macro");
 				fusion_return( imm_expr); //uses ra
 				break;
 			default:
+
 				as_bad(_("Macro %s not implemented"), ip->insn_mo->name);
 				break;
 		}	
@@ -1186,8 +1188,8 @@ int parse_rdai( int* rd, int* rsa, int* imm,  char** op_end, expressionS* imm_ex
 	parse_imm(imm, op_end, imm_expr, reloc, ip);
 	while( (**op_end == ' ') || (**op_end == '\t'))
 		(*op_end)++;
-	if(**op_end != '\0')
-		as_warn(_("ignored rest of line: %s"), *op_end);
+//	if(**op_end != '\0')
+//		as_warn(_("ignored rest of line: %s"), *op_end);
 	return 0;
 } 
 int parse_rdi(int* rd, int* imm, char** op_end, expressionS* imm_expr, bfd_reloc_code_real_type reloc, struct fusion_cl_insn* ip){
@@ -1207,8 +1209,8 @@ int parse_rdi(int* rd, int* imm, char** op_end, expressionS* imm_expr, bfd_reloc
 	parse_imm(imm, op_end, imm_expr, reloc, ip);
 	while( (**op_end == ' ') || (**op_end == '\t'))
 		(*op_end)++;
-	if(**op_end != '\0')
-		as_warn(_("ignored rest of line: %s"), *op_end);
+//	if(**op_end != '\0')
+//		as_warn(_("ignored rest of line: %s"), *op_end);
 	return 0;
 
 }
@@ -1229,8 +1231,8 @@ int parse_rai(int *rsa, int* imm, char** op_end, expressionS* imm_expr, bfd_relo
 	parse_imm(imm, op_end, imm_expr, reloc, ip);
 	while( (**op_end == ' ') || (**op_end == '\t'))
 		(*op_end)++;
-	if(**op_end != '\0')
-		as_warn(_("ignored rest of line: %s"), *op_end);
+//	if(**op_end != '\0')
+//		as_warn(_("ignored rest of line: %s"), *op_end);
 	return 0;
 }
 int parse_rabi(int* rsa, int* rsb, int* imm, char** op_end, expressionS* imm_expr, bfd_reloc_code_real_type reloc, struct fusion_cl_insn* ip){
@@ -1256,8 +1258,8 @@ int parse_rabi(int* rsa, int* rsb, int* imm, char** op_end, expressionS* imm_exp
 	parse_imm(imm, op_end, imm_expr, reloc, ip);
 	while( (**op_end == ' ') || (**op_end == '\t'))
 		(*op_end)++;
-	if(**op_end != '\0')
-		as_warn(_("ignored rest of line: %s"), *op_end);
+//	if(**op_end != '\0')
+//		as_warn(_("ignored rest of line: %s"), *op_end);
 	return 0;
 }
 
@@ -1297,8 +1299,8 @@ int parse_rdai_offset( int* rd, int* rsa, int* imm,  char** op_end, expressionS*
 	while( (**op_end == ' ') || (**op_end == '\t') || (**op_end == ')'))
 		(*op_end)++;
 
-	if(**op_end != '\0')
-		as_warn(_("ignored rest of line: %s"), *op_end);
+//	if(**op_end != '\0')
+//		as_warn(_("ignored rest of line: %s"), *op_end);
 	return 0;
 } 
 
@@ -1329,8 +1331,8 @@ int parse_rai_offset(int *rsa, int* imm, char** op_end, expressionS* imm_expr, b
 //	} else {
 //		(*op_end)++;
 //	}
-	if(**op_end != '\0')
-		as_warn(_("ignored rest of line: %s"), *op_end);
+//	if(**op_end != '\0')
+//		as_warn(_("ignored rest of line: %s"), *op_end);
 	return 0;
 }
 int parse_rabi_offset(int* rsa, int* rsb, int* imm, char** op_end, expressionS* imm_expr, bfd_reloc_code_real_type reloc, struct fusion_cl_insn* ip){
@@ -1365,8 +1367,8 @@ int parse_rabi_offset(int* rsa, int* rsb, int* imm, char** op_end, expressionS* 
 	while( (**op_end == ' ') || (**op_end == '\t') || (**op_end == ')'))
 		(*op_end)++;
 
-	if(**op_end != '\0')
-		as_warn(_("ignored rest of line: %s"), *op_end);
+//	if(**op_end != '\0')
+//		as_warn(_("ignored rest of line: %s"), *op_end);
 	return 0;	
 }
 
@@ -1592,7 +1594,7 @@ bfd_boolean assemble_insn_bin(char* str, struct fusion_cl_insn* ip, expressionS*
 					while( (*op_end == ' ') || (*op_end == '\t'))
 						op_end++;
 					if(*op_end != '\0')
-						as_warn(_("ignored rest of line: %s"), op_end);
+						//as_warn(_("ignored rest of line: %s"), op_end);
 					break;	
 			}	
 	}
@@ -1774,7 +1776,9 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 		case BFD_RELOC_FUSION_STORE:
 		case BFD_RELOC_FUSION_LOAD:
 //		case BFD_RELOC_FUSION_21:
+#ifdef DEBUG
 		as_warn(_("Const_reloc: %08lx"), (unsigned long int)fusion_apply_const_reloc(fixP->fx_r_type, *valP));
+#endif
 			bfd_putb32( fusion_apply_const_reloc(fixP->fx_r_type, *valP) | bfd_getb32(buf), buf);
 			if(fixP->fx_addsy == NULL)
 				fixP->fx_done = TRUE;
@@ -1805,15 +1809,16 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 			 if(fixP->fx_addsy){
 				 bfd_vma target = S_GET_VALUE(fixP->fx_addsy) + *valP;
 				 bfd_vma delta = (target - md_pcrel_from(fixP) );
+#ifdef DEBUG
 				 as_warn(_("Target: %lx"), (unsigned long int)target);
 				 as_warn(_("Delta: %lx"), (unsigned long int)delta);
 				 as_warn(_("md_pcrel_from(fixP): %lx"), (unsigned long int)md_pcrel_from(fixP));
+#endif
 				 if ( ( ( (signed int) delta ) < -8192) || ( ( (signed int) delta ) > 8192)){
 					 as_bad_where(fixP->fx_file, fixP->fx_line,_("too large pc relative branch"));
  
 				 }
 
-//				 as_warn(_("Using fx_addsy"));
 				 bfd_putb32( bfd_getb32(buf) | GEN_B_IMM(delta), buf);
 				 
 			 }
@@ -1825,15 +1830,16 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 			if(fixP->fx_addsy){
 				bfd_vma target = (S_GET_VALUE(fixP->fx_addsy) + *valP);
 				bfd_vma delta = (target - md_pcrel_from(fixP));
+#ifdef DEBUG
 				as_warn(_("Target: %x"), (unsigned int)target);
 				as_warn(_("Delta: %x"), (unsigned int)delta);
 			 	as_warn(_("md_pcrel_from(fixP): %lx"), (unsigned long int)md_pcrel_from(fixP));
+#endif
 				if ( ( ( (signed int) delta ) < -1048576) || ( ( (signed int) delta ) > 1048575)) {
 				 	as_bad_where(fixP->fx_file, fixP->fx_line,_("too large pc relative branch"));
 					
 				}
 				bfd_putb32( bfd_getb32(buf) | (GEN_J_IMM(delta)), buf);				
-//				as_warn(_("Using fx_addsy"));
 			}
 			break;
 		case BFD_RELOC_16_PCREL:
@@ -1843,31 +1849,36 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 			if(fixP->fx_addsy){
 				bfd_vma target = (S_GET_VALUE(fixP->fx_addsy) + *valP);
 				bfd_vma delta = (target - md_pcrel_from(fixP));
+#ifdef DEBUG
 				as_warn(_("Target: %x"), (unsigned int)target);
 				as_warn(_("Delta: %x"), (unsigned int)delta);
 			 	as_warn(_("md_pcrel_from(fixP): %lx"), (unsigned long int)md_pcrel_from(fixP));
+#endif
 				if ( ( ( (signed int) delta ) < -32768) || ( ( (signed int) delta ) > 32767)) {
 				 	as_bad_where(fixP->fx_file, fixP->fx_line,_("too large pc relative load"));
 					
 				}
 				bfd_putb32( bfd_getb32(buf) | (GEN_LI_IMM(delta)), buf);				
-//				as_warn(_("Using fx_addsy"));
 			}
 			break;
 		case BFD_RELOC_FUSION_21:
 			if(!*valP)
 				break;
 			if(fixP->fx_addsy != NULL){
-				as_warn(_("using addsy; jr offset"));
 				bfd_vma target = (S_GET_VALUE(fixP->fx_addsy) + *valP);
+#ifdef DEBUG
+				as_warn(_("using addsy; jr offset"));
 				as_warn(_("Target: %08lx"), (unsigned long)target);
 				as_warn(_("Imm value: %08lx"), (unsigned long)GEN_J_IMM(target));
+#endif
 				if( ((unsigned long) target) > 0x001fffff){
 					as_bad_where(fixP->fx_file, fixP->fx_line,_("too large jump offset"));
 				}
 				bfd_putb32( (bfd_getb32(buf) ) | (GEN_J_IMM(target) ), buf );
 			} else {
+#ifdef DEBUG
 				as_warn(_("using constant reloc; jr offset"));
+#endif
 				bfd_putb32( fusion_apply_const_reloc(fixP->fx_r_type, *valP) | bfd_getb32(buf), buf);
 				fixP->fx_done = TRUE;
 			}
@@ -1900,15 +1911,19 @@ arelent *tc_gen_reloc(asection* section ATTRIBUTE_UNUSED, fixS *fixp){
 		reloc->addend = (fixp->fx_frag->fr_address + md_pcrel_from(fixp));
 		reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
 	} else if(fixp->fx_r_type == BFD_RELOC_FUSION_21 ) {
+#ifdef DEBUG
 		as_warn(_("fx_addnumber: %08lx"),(unsigned long int) fixp->fx_addnumber);
 		as_warn(_("GEN_J_IMM(fx_addnumber): %08lx"),(unsigned long int) GEN_J_IMM(fixp->fx_addnumber));
+#endif
 		reloc->addend  = fixp->fx_addnumber;//GEN_J_IMM(fixp->fx_addnumber) ;
 		reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
 	} else {
 		reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
 		reloc->addend = fixp->fx_addnumber;
 	}
+#ifdef DEBUG
 	as_warn(_("Reloc address: %x"), (unsigned int) (reloc->address));
+#endif
 	reloc->howto = bfd_reloc_type_lookup(stdoutput, fixp->fx_r_type);
 
 	if(reloc->howto == NULL){
