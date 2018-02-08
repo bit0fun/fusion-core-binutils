@@ -332,6 +332,14 @@ static void hash_reg_names(enum reg_file regf, const char* const names[], unsign
 
 }
 /*
+static unsigned int reg_lookup_internal(const char* s, enum reg_file regf){
+	struct regname* r = (struct regname*) hash_find(reg_names_hash, s);
+	if( r == NULL || DECODE_REG_FILE(r) != reg_file){
+		return -1;
+	}
+	return DECODE_REG_NUM(r);
+}
+
 static bfd_boolean arg_lookup(char** s, const char* array, size_t size, unsigned* regnop){
 	const char* p = strchr(*s, ',');	
 	size_t i, len = p ? (size_t)(p - *s) : strlen(*s);
@@ -892,38 +900,39 @@ static int parse_register_operand(char** ptr){
 		 && (s[2] == 'e')
 		 && (s[3] == 'r')
 		 && (s[4] == 'o') ){
-			if( !((s[5] == ' ') || (s[5] == '\t') || (s[5] == ',') || (s[5] == ')') )){
+			if( !((s[5] == ' ') || (s[5] == '\t') || (s[5] == ',') || (s[5] == ')') || (s[5] == '\0') )){
 				as_bad(_("not a real register: %s"), s);	
 			}
 		*ptr += 5; 
 		return 0; //register 0
 	 } else if( (s[1] == 's') && (s[2] == 'p')) {
-			if( !((s[3] == ' ') || (s[3] == '\t') || (s[3] == ',')) ){
+			if( !((s[3] == ' ') || (s[3] == '\t') || (s[3] == ',') || (s[3] == '\0')) ){
 				as_bad(_("not a real register: %s"), s);	
 			}
 			*ptr += 3;
 			return 1;
 	 } else if( (s[1] == 'f') && (s[2] == 'p')){
-			if( !((s[3] == ' ') || (s[3] == '\t') || (s[3] == ',')) ){
+			if( !((s[3] == ' ') || (s[3] == '\t') || (s[3] == ',') || (s[3] == '\0') )){
 				as_bad(_("not a real register: %s"), s);	
 			}
 			*ptr += 3;
 			return 2;
 	 } else if( (s[1] == 'g') && (s[2] == 'p')) {
-			if(! ( (s[3] == ' ') || (s[3] == '\t') || (s[3] = ',')) ){
+			if(! ( (s[3] == ' ') || (s[3] == '\t') || (s[3] = ',') || (s[3] == '\0') )){
 				as_bad(_("not a real register: %s"), s);	
+				ignore_rest_of_line();
 			}
 			*ptr += 3;
 			return 3;
 	 } else if( (s[1] == 'r') && (s[2] == 'a')) {
-			if( !((s[3] == ' ') || (s[3] == '\t') || (s[3] == ',')) ){
+			if( !((s[3] == ' ') || (s[3] == '\t') || (s[3] == ',') || (s[3] == '\0') )){
 				as_bad(_("not a real register: %s"), s);	
 			}
 			*ptr += 3;
 			return 4;
 	 } else if( (s[1] == 'a') && (s[2] == 'r') && (s[3] == 'g')) {
 			reg = s[4] - '0'; //get number value
-			if( (reg <0) || (reg > 3) ){ //not ARGX reg
+			if( (reg < 0) || (reg > 3) ){ //not ARGX reg
 				as_bad(_("illegal argument register"));
 				ignore_rest_of_line();
 				return -1;
@@ -936,7 +945,7 @@ static int parse_register_operand(char** ptr){
 			  &&(s[2] == 'v')
 			  &&(s[3] == 'a')
 			  &&(s[4] == 'l')){
-			if( !((s[6] == ' ') || (s[6] == '\t') || (s[6] == ',')) ){
+			if( !((s[6] == ' ') || (s[6] == '\t') || (s[6] == ',') || (s[6] == '\0')) ){
 				as_bad(_("not a real register: %s"), s);	
 			}
 		reg = s[5] - '0';
@@ -945,7 +954,10 @@ static int parse_register_operand(char** ptr){
 			ignore_rest_of_line();
 			return -1;
 		} else{
-			*ptr += 6;
+//			if(s[6] == '\0')
+//				*ptr += 5;
+			//else
+				*ptr += 6;
 			return reg + 9; //regs 9 and 10
 		}
 				 
@@ -956,31 +968,36 @@ static int parse_register_operand(char** ptr){
 			ignore_rest_of_line();
 			return -1;
 		} else{
-			if( s[3] == 1) { //need to check if 10
-				reg = (s[4] - '0') + 10; 	
-				if(reg != 10){ //only option at the moment
-					as_bad(_("illegal general use register"));	
-					ignore_rest_of_line();
-					return -1;
-				} else {
-					*ptr += 5;
-					return 21; //gp10 is R21
-				}
-			} else {
+			if( (s[3] == '1') && (s[4] == '0')){
+				*ptr +=5;
+				return 21; //gp10 is R21
+			} else{
 				*ptr += 4;
-				return reg + 11; //gp0 is R11
+				return reg + 11;
 			}
+		//	if( s[3] == 1) { //need to check if 10
+		//		reg = (s[4] - '0') + 10; 	
+		//		if(s[4] != '0'){ //only option at the moment
+		//			as_bad(_("illegal general use register"));	
+		//			ignore_rest_of_line();
+		//			return -1;
+		//		} else {
+		//			*ptr += 6;
+		//			return 21; //gp10 is R21
+		//		}
+		//	} else {
+		//		*ptr += 4;
+		//		return reg + 11; //gp0 is R11
+		//	}
 		}
-	 
-			 
 	 } else if ( (s[1] == 't') && (s[2] == 'm') 
 				&& (s[3] == 'p')  ){
-			if( !((s[5] == ' ') || (s[5] == '\t') || (s[5] == ',') || (s[5] == ')'))){
-				as_bad(_("not a real register: %s"), s);	
+			if( !((s[5] == ' ') || (s[5] == '\t') || (s[5] == ',') || (s[5] == ')') || (s[5] == '\0')) ){
+				as_bad(_("illegal temporary use register: %s"), s);	
 			}
 			reg = s[4] - '0'; 
 		if( (reg < 0) || (reg > 8) ){
-			as_bad(_("illegal general use register"));	
+			as_bad(_("illegal temporary use register"));	
 			ignore_rest_of_line();
 			return -1;
 		} else {
@@ -989,17 +1006,16 @@ static int parse_register_operand(char** ptr){
 		}
 			 
 	 } else if( (s[1] == 'h') && (s[2] == 'i') && (s[3] == '0')){
-			if( !((s[4] == ' ') || (s[4] == '\t') || (s[4] == ',')) ){
+			if( !((s[4] == ' ') || (s[4] == '\t') || (s[4] == ',') || (s[4] == '\0')) ){
 				as_bad(_("not a real register: %s"), s);	
 			}
-		*ptr += 3;
+		*ptr += 4;
 		return 30; //HI0 is R30
-	 } else if( (s[1] == 'l') && (s[2] == 'o') && (s[3] == 'w')
-					 && (s[4] == '0')){
-			if( !((s[5] == ' ') || (s[5] == '\t') || (s[5] == ',')) ){
+	 } else if( (s[1] == 'l') && (s[2] == 'o') && (s[3] == '0')){
+			if( !((s[4] == ' ') || (s[4] == '\t') || (s[4] == ',') || (s[4] == '\0')) ){
 				as_bad(_("not a real register: %s"), s);	
 			}
-		*ptr += 5;
+		*ptr += 4;
 		return 31; //LOW0 is R31
 	 } else {
 			as_bad(_("expecting register, unknown operand:%s"),*ptr);	
@@ -1038,8 +1054,9 @@ int parse_rdab( int* rd, int* rsa, int* rsb, char* op_end){
 		op_end++;
 
 	*rsb = parse_register_operand(&op_end);
-	
-	while( (*op_end == ' ') || (*op_end == '\t'))
+	if(*rsb == 4)
+		return 0;
+	while( (*op_end == ' ') || (*op_end == '\t') || !(*op_end == '\0'))
 		op_end++;
 	if(*op_end != '\0')
 		as_warn(_("ignored rest of line: %s"), op_end);
