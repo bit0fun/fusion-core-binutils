@@ -117,21 +117,21 @@
 
 /*Opcode related defines*/
 #define MASK_OPC			0xfc000000 //upper 6 bits gives opcode
-#define MASK_R_OPC			0x01
-#define MASK_LI_OPC			0x02
-#define MASK_IMM_OPC		0x03
-#define MASK_B_OPC			0x05
-#define MASK_JMP_OPC		0x06
-#define MASK_JLNK_OPC		0x07
-#define MASK_RMEM_OPC		0x12
-#define MASK_WMEM_OPC		0x3a
-#define MASK_SYS_OPC		0x08 //more system instructions may change this
-#define MASK_MSB_OPC		0xfc000000	//31st bit of instruction
-#define GET_OPC(i)			(MASK_MSB_OPC & i) >>26  //shift to make upper 6 bits, fit in 1 byte
+#define MASK_R_OPC			OPC_INT
+#define MASK_LI_OPC			OPC_LI
+#define MASK_IMM_OPC		OPC_IMM
+#define MASK_B_OPC			OPC_BRANCH
+#define MASK_JMP_OPC		OPC_JMP
+#define MASK_JLNK_OPC		OPC_JLNK
+#define MASK_RMEM_OPC		OPC_LD
+#define MASK_WMEM_OPC		OPC_ST
+#define MASK_SYS_OPC		OPC_SYS //more system instructions may change this
+#define MASK_MSB_OPC		0x11000000	//31st bit of instruction
+#define GET_OPC(i)			(MASK_OPC & i) >>26  //shift to make upper 6 bits, fit in 1 byte
 #define MASK_NO_IMM			0x00000000
 
 /*OPCode match macros*/
-#define IS_CP_INSN(i)	((MASK_MSB_OPC & i) == MASK_MSB_OPC) 	//is coprocessor instruction if first bit of opcode is 1
+#define IS_CP_INSN(i)	(GET_OPC(i) == MASK_MSB_OPC) 	//is coprocessor instruction if first bit of opcode is 1
 #define IS_R_INSN(i)	(GET_OPC(i) == MASK_R_OPC)  			//returns 1 if match, otherwise 0
 #define IS_LI_INSN(i)	(GET_OPC(i) == MASK_LI_OPC)
 #define IS_IMM_INSN(i)	(GET_OPC(i) == MASK_IMM_OPC)
@@ -171,6 +171,7 @@
 #define CPID_MAX		2
 
 /*Defines for Opcodes*/
+/* Old definitions
 #define OPC_INT			0x01
 #define OPC_IMM			0x03
 #define OPC_LD			0x12
@@ -180,7 +181,17 @@
 #define OPC_JLNK		0x07
 #define OPC_BRANCH		0x05
 #define OPC_SYS			0x08
+*/
 
+#define OPC_INT			0x13 //010011
+#define OPC_IMM			0x16 //010110
+#define OPC_LD			0x1e //011110
+#define OPC_LI			0x10 //010000
+#define OPC_ST			0x1d //011101
+#define OPC_JMP			0x0c //001100	
+#define OPC_JLNK		0x04 //000100
+#define OPC_BRANCH		0x0d //001101
+#define OPC_SYS			0x20 //100000
 
 /*Instruction bits*/
 typedef uint32_t insn_t;

@@ -51,105 +51,105 @@ const char* fusion_spreg_name[13] ={
 //Uses ALU OP field to determine
 const fusion_opc_info_t fusion_insn_R[NUM_INSN_R] = {
 /* Name  	ALUOP	args		frmt		cpid		imm_mask		opc	*/
- {"add", 	0x00,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"sub", 	0x01, 	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"addu",	0x02,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"subu",	0x03,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"tcmp",	0x04,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"and",	0x05,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"or",		0x06,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"xor",	0x07,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"sal",	0x08,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"sar",	0x09,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"sll",	0x0a,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"slr",	0x0b,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"comp",	0x0c,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"nri",	0x0d,	USE_NONE,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"nri",	0x0e,	USE_NONE,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"nri",	0x0f,	USE_NONE,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"nop",	0x10,	USE_NONE,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x00},
+ {"add", 	0x00,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"sub", 	0x01, 	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"addu",	0x02,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"subu",	0x03,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"not",	0x04,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"and",	0x05,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"or",		0x06,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"xor",	0x07,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"sal",	0x08,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"sar",	0x09,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"sll",	0x0a,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"slr",	0x0b,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"comp",	0x0c,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"nri",	0x0d,	USE_NONE,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"nri",	0x0e,	USE_NONE,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"nri",	0x0f,	USE_NONE,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"nop",	0x10,	USE_NONE,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
 };
 
 const fusion_opc_info_t fusion_insn_I[NUM_INSN_I] = {
 /* Name  	ALUOP	args		frmt		cpid		imm_mask		opc	*/
-{"addi",	0x00, 	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"subi",	0x01, 	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"addui",	0x02,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"subui",	0x03,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"noti",	0x04,	USE_RDI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"andi",	0x05,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"ori",		0x06,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"xori",	0x07,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"sali",	0x08,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"sari",	0x09,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"slli",	0x0a,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"slri",	0x0b,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"compi",	0x0c,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"nri",		0x0d,	USE_NONE,	FRMT_I,		CPID_MAIN,	MASK_NO_IMM,	0x03},
-{"nri",		0x0e,	USE_NONE,	FRMT_I,		CPID_MAIN,	MASK_NO_IMM,	0x03},
-{"nri",		0x0f,	USE_NONE,	FRMT_I,		CPID_MAIN,	MASK_NO_IMM,	0x03}
+{"addi",	0x00, 	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"subi",	0x01, 	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"addui",	0x02,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"subui",	0x03,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"noti",	0x04,	USE_RDI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"andi",	0x05,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"ori",		0x06,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"xori",	0x07,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"sali",	0x08,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"sari",	0x09,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"slli",	0x0a,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"slri",	0x0b,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"compi",	0x0c,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"nri",		0x0d,	USE_NONE,	FRMT_I,		CPID_MAIN,	MASK_NO_IMM,	OPC_IMM},
+{"nri",		0x0e,	USE_NONE,	FRMT_I,		CPID_MAIN,	MASK_NO_IMM,	OPC_IMM},
+{"nri",		0x0f,	USE_NONE,	FRMT_I,		CPID_MAIN,	MASK_NO_IMM,	OPC_IMM}
 };
 const fusion_opc_info_t fusion_insn_L[NUM_INSN_L] = {
 /* Name  	Funct	args		frmt		cpid		imm_mask		opc	*/
-{"lw",		0x0, 	USE_RDAI,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		0x12},
-{"lh",		0x1,	USE_RDAI,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		0x12},
-{"lth",		0x2,	USE_RDAI,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		0x12},
-{"lb",		0x3,	USE_RDAI,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		0x12}
+{"lw",		0x0, 	USE_RDAI,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		OPC_LD},
+{"lh",		0x1,	USE_RDAI,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		OPC_LD},
+{"lth",		0x2,	USE_RDAI,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		OPC_LD},
+{"lb",		0x3,	USE_RDAI,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		OPC_LD}
 
 };
 const fusion_opc_info_t fusion_insn_LI[NUM_INSN_LI] = {
 /* Name  	DSEL	args		frmt		cpid		imm_mask		opc	*/
-{"li",		0x0,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,		0x02},
-{"lsi",		0x1,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,		0x02},
-{"lgi",		0x2,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,		0x02},
-{"lui",		0x3,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,		0x02},
-{"lusi",	0x4,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,		0x02},
-{"lugi",	0x5,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,		0x02},
-{"nri",		0x6,	USE_NONE,	FRMT_LI,	CPID_MAIN,	MASK_NO_IMM,	0x02},
-{"nri",		0x7,	USE_NONE,	FRMT_LI,	CPID_MAIN,	MASK_NO_IMM,	0x02},
-{"lni",		0x8,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,		0x02},
-{"lnsi",	0x9,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,		0x02},
-{"lngi",	0xa,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,		0x02},
-{"luni",	0xb,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,		0x02},
-{"lunsi",	0xc,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,		0x02},
-{"lungi",	0xd,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,		0x02},
-{"nri",		0xe,	USE_NONE,	FRMT_LI,	CPID_MAIN,	MASK_NO_IMM,	0x02},
-{"nri",		0xf,	USE_NONE,	FRMT_LI,	CPID_MAIN,	MASK_NO_IMM,	0x02}
+{"li",		0x0,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"lsi",		0x1,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"lgi",		0x2,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"lui",		0x3,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"lusi",	0x4,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"lugi",	0x5,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"nri",		0x6,	USE_NONE,	FRMT_LI,	CPID_MAIN,	MASK_NO_IMM,	OPC_LI},
+{"nri",		0x7,	USE_NONE,	FRMT_LI,	CPID_MAIN,	MASK_NO_IMM,	OPC_LI},
+{"lni",		0x8,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"lnsi",	0x9,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"lngi",	0xa,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"luni",	0xb,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"lunsi",	0xc,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"lungi",	0xd,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"nri",		0xe,	USE_NONE,	FRMT_LI,	CPID_MAIN,	MASK_NO_IMM,	OPC_LI},
+{"nri",		0xf,	USE_NONE,	FRMT_LI,	CPID_MAIN,	MASK_NO_IMM,	OPC_LI}
 };
 const fusion_opc_info_t fusion_insn_S[NUM_INSN_S] = {
 /* Name  	Funct	args		frmt		cpid		imm_mask		opc	*/
-{"sw",		0x0, 	USE_RABI,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		0x3a},
-{"sh",		0x1,	USE_RABI,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		0x3a},
-{"sth",		0x2,	USE_RABI,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		0x3a},
-{"sb",		0x3,	USE_RABI,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		0x3a}
+{"sw",		0x0, 	USE_RABI,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		OPC_ST},
+{"sh",		0x1,	USE_RABI,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		OPC_ST},
+{"sth",		0x2,	USE_RABI,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		OPC_ST},
+{"sb",		0x3,	USE_RABI,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		OPC_ST}
 };
 const fusion_opc_info_t fusion_insn_J[NUM_INSN_J] = {
 /* Name  	USESREG	args		frmt		cpid		imm_mask		opc	*/
-{"j",		0x0,	USE_I,		FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x06},
-{"jr",		0x1,	USE_RAI,	FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x06}
+{"j",		0x0,	USE_I,		FRMT_J,		CPID_MAIN,	MASK_IMM_J,		OPC_JMP},
+{"jr",		0x1,	USE_RAI,	FRMT_J,		CPID_MAIN,	MASK_IMM_J,		OPC_JMP}
 };
 const fusion_opc_info_t fusion_insn_JL[NUM_INSN_JL] = {
 /* Name  	USESREG	args		frmt		cpid		imm_mask		opc	*/
-{"jal",		0x0,	USE_I,		FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x07},
-{"jrl",		0x1,	USE_RAI,	FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x07}
+{"jal",		0x0,	USE_I,		FRMT_J,		CPID_MAIN,	MASK_IMM_J,		OPC_JLNK},
+{"jrl",		0x1,	USE_RAI,	FRMT_J,		CPID_MAIN,	MASK_IMM_J,		OPC_JLNK}
 };
 const fusion_opc_info_t fusion_insn_B[NUM_INSN_B] = {
 /* Name  	Funct	args		frmt		cpid		imm_mask		opc	*/
-{"beq",		0x0,	USE_RABI,	FRMT_B,		CPID_MAIN,	MASK_IMM_B,		0x05},
-{"bne",		0x1,	USE_RABI,	FRMT_B,		CPID_MAIN,	MASK_IMM_B,		0x05},
-{"bgt",		0x2,	USE_RABI,	FRMT_B,		CPID_MAIN,	MASK_IMM_B,		0x05},
-{"blt",		0x3,	USE_RABI,	FRMT_B,		CPID_MAIN,	MASK_IMM_B,		0x05}
+{"beq",		0x0,	USE_RABI,	FRMT_B,		CPID_MAIN,	MASK_IMM_B,		OPC_BRANCH},
+{"bne",		0x1,	USE_RABI,	FRMT_B,		CPID_MAIN,	MASK_IMM_B,		OPC_BRANCH},
+{"bgt",		0x2,	USE_RABI,	FRMT_B,		CPID_MAIN,	MASK_IMM_B,		OPC_BRANCH},
+{"blt",		0x3,	USE_RABI,	FRMT_B,		CPID_MAIN,	MASK_IMM_B,		OPC_BRANCH}
 
 };
 const fusion_opc_info_t fusion_insn_SYS[NUM_INSN_SYS] = {
 /* Name  	Funct	args		frmt		cpid		imm_mask		opc	*/
-{"syscall",	0x00,	USE_RDAI,	FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	0x08},
-{"sysret",	0x01,	USE_RDAI,	FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	0x08},
-{"stspr",	0x02,	USE_RDA,	FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	0x08},
-{"ldspr",	0x03,	USE_RDA,	FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	0x08},
-{"sync",	0x04,	USE_NONE,	FRMT_SYS,	CPID_MAIN,	MASK_NO_IMM,		0x08},
-{"pmir",	0x05,	USE_I,		FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	0x08},
-{"pmd",		0x06, 	USE_I,		FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	0x08},
+{"syscall",	0x00,	USE_RDAI,	FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	OPC_SYS},
+{"sysret",	0x01,	USE_RDAI,	FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	OPC_SYS},
+{"stspr",	0x02,	USE_RDA,	FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	OPC_SYS},
+{"ldspr",	0x03,	USE_RDA,	FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	OPC_SYS},
+{"sync",	0x04,	USE_NONE,	FRMT_SYS,	CPID_MAIN,	MASK_NO_IMM,	OPC_SYS},
+{"pmir",	0x05,	USE_I,		FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	OPC_SYS},
+{"pmd",		0x06, 	USE_I,		FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	OPC_SYS},
 {"nri",		0x07,	USE_NONE,	FRMT_SYS,	CPID_MAIN,	MASK_NO_IMM,		0x08},
 {"nri",		0x08,	USE_NONE,	FRMT_SYS,	CPID_MAIN,	MASK_NO_IMM,		0x08},
 {"nri",		0x09,	USE_NONE,	FRMT_SYS,	CPID_MAIN,	MASK_NO_IMM,		0x08},
@@ -409,88 +409,88 @@ const fusion_opc_info_t fusion_insn_all[NUM_INSN] = {
  {"nop",	0x00,	USE_NONE,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x00},
 /*		Integer Instructions												*/
 /* Name  	ALUOP	args		frmt		cpid		imm_mask		opc	*/
- {"add", 	0x00,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"sub", 	0x01, 	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"addu",	0x02,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"subu",	0x03,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"tcmp",	0x04,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"and",	0x05,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"or",		0x06,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"xor",	0x07,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"sal",	0x08,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"sar",	0x09,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"sll",	0x0a,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"slr",	0x0b,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"comp",	0x0c,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
- {"nri",	0x0d,	USE_NONE,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	0x01},
+ {"add", 	0x00,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"sub", 	0x01, 	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"addu",	0x02,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"subu",	0x03,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"not",	0x04,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"and",	0x05,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"or",		0x06,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"xor",	0x07,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"sal",	0x08,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"sar",	0x09,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"sll",	0x0a,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"slr",	0x0b,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"comp",	0x0c,	USE_RDAB,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
+ {"nri",	0x0d,	USE_NONE,	FRMT_R,		CPID_MAIN,	MASK_NO_IMM,	OPC_INT},
 /*		Immediate Instructions												*/
 /* Name  	ALUOP	args		frmt		cpid		imm_mask		opc	*/
-{"addi",	0x00, 	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"subi",	0x01, 	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"addui",	0x02,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"subui",	0x03,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"noti",	0x04,	USE_RDI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"andi",	0x05,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"ori",		0x06,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"xori",	0x07,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"sali",	0x08,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"sari",	0x09,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"slli",	0x0a,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"slri",	0x0b,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
-{"compi",	0x0c,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		0x03},
+{"addi",	0x00, 	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"subi",	0x01, 	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"addui",	0x02,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"subui",	0x03,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"noti",	0x04,	USE_RDI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"andi",	0x05,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"ori",		0x06,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"xori",	0x07,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"sali",	0x08,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"sari",	0x09,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"slli",	0x0a,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"slri",	0x0b,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
+{"compi",	0x0c,	USE_RDAI,	FRMT_I,		CPID_MAIN,	MASK_IMM_I,		OPC_IMM},
 /*		Load Instructions													*/
 /* Name  	Funct	args		frmt		cpid		imm_mask		opc	*/
-{"lw",		0x0, 	USE_RDAI_O,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		0x12},
-{"lh",		0x1,	USE_RDAI_O,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		0x12},
-{"lth",		0x2,	USE_RDAI_O,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		0x12},
-{"lb",		0x3,	USE_RDAI_O,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		0x12},
+{"lw",		0x0, 	USE_RDAI_O,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		OPC_LD},
+{"lh",		0x1,	USE_RDAI_O,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		OPC_LD},
+{"lth",		0x2,	USE_RDAI_O,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		OPC_LD},
+{"lb",		0x3,	USE_RDAI_O,	FRMT_L,		CPID_MAIN,	MASK_IMM_L,		OPC_LD},
 /*		Load Immediate Instructions											*/
 /* Name  	DSEL	args		frmt		cpid		imm_mask		opc	*/
-{"li",		0x0,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	0x02},
-{"lsi",		0x1,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	0x02},
-{"lgi",		0x2,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	0x02},
-{"lui",		0x3,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	0x02},
-{"lusi",	0x4,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	0x02},
-{"lugi",	0x5,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	0x02},
-{"lni",		0x8,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	0x02},
-{"lnsi",	0x9,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	0x02},
-{"lngi",	0xa,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	0x02},
-{"luni",	0xb,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	0x02},
-{"lunsi",	0xc,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	0x02},
-{"lungi",	0xd,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	0x02},
+{"li",		0x0,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"lsi",		0x1,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"lgi",		0x2,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"lui",		0x3,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"lusi",	0x4,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"lugi",	0x5,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"lni",		0x8,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"lnsi",	0x9,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"lngi",	0xa,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"luni",	0xb,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"lunsi",	0xc,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
+{"lungi",	0xd,	USE_RDI,	FRMT_LI,	CPID_MAIN,	MASK_IMM_LI,	OPC_LI},
 /*		Store Instructions													*/
 /* Name  	Funct	args		frmt		cpid		imm_mask		opc	*/
-{"sw",		0x0, 	USE_RABI_O,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		0x3a},
-{"sh",		0x1,	USE_RABI_O,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		0x3a},
-{"sth",		0x2,	USE_RABI_O,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		0x3a},
-{"sb",		0x3,	USE_RABI_O,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		0x3a},
+{"sw",		0x0, 	USE_RABI_O,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		OPC_ST},
+{"sh",		0x1,	USE_RABI_O,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		OPC_ST},
+{"sth",		0x2,	USE_RABI_O,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		OPC_ST},
+{"sb",		0x3,	USE_RABI_O,	FRMT_S,		CPID_MAIN,	MASK_IMM_S,		OPC_ST},
 /*		Jump Instructions													*/
 /* Name  	USESREG	args		frmt		cpid		imm_mask		opc	*/
-{"j",		0x0,	USE_I,		FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x06},
-{"jr",		0x1,	USE_RAI_O,	FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x06},
+{"j",		0x0,	USE_I,		FRMT_J,		CPID_MAIN,	MASK_IMM_J,		OPC_JMP},
+{"jr",		0x1,	USE_RAI_O,	FRMT_J,		CPID_MAIN,	MASK_IMM_J,		OPC_JMP},
 /*		Jump Link Instructions												*/
 /* Name  	USESREG	args		frmt		cpid		imm_mask		opc	*/
-{"jal",		0x0,	USE_I,		FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x07},
-{"jrl",		0x1,	USE_RAI_O,	FRMT_J,		CPID_MAIN,	MASK_IMM_J,		0x07},
+{"jal",		0x0,	USE_I,		FRMT_J,		CPID_MAIN,	MASK_IMM_J,		OPC_JLNK},
+{"jrl",		0x1,	USE_RAI_O,	FRMT_J,		CPID_MAIN,	MASK_IMM_J,		OPC_JLNK},
 /*		Branch Instructions													*/
 /* Name  	Funct	args		frmt		cpid		imm_mask		opc	*/
-{"beq",		0x0,	USE_RABI,	FRMT_B,		CPID_MAIN,	MASK_IMM_B,		0x05},
-{"bne",		0x1,	USE_RABI,	FRMT_B,		CPID_MAIN,	MASK_IMM_B,		0x05},
-{"bgt",		0x2,	USE_RABI,	FRMT_B,		CPID_MAIN,	MASK_IMM_B,		0x05},
-{"blt",		0x3,	USE_RABI,	FRMT_B,		CPID_MAIN,	MASK_IMM_B,		0x05},
+{"beq",		0x0,	USE_RABI,	FRMT_B,		CPID_MAIN,	MASK_IMM_B,		OPC_BRANCH},
+{"bne",		0x1,	USE_RABI,	FRMT_B,		CPID_MAIN,	MASK_IMM_B,		OPC_BRANCH},
+{"bgt",		0x2,	USE_RABI,	FRMT_B,		CPID_MAIN,	MASK_IMM_B,		OPC_BRANCH},
+{"blt",		0x3,	USE_RABI,	FRMT_B,		CPID_MAIN,	MASK_IMM_B,		OPC_BRANCH},
 /*		System Instructions													*/
 /* Name  	Funct	args		frmt		cpid		imm_mask		opc	*/
-{"syscall",	0x00,	USE_RDAI,	FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	0x08},
-{"sysret",	0x01,	USE_RDAI,	FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	0x08},
-{"stspr",	0x02,	USE_RDA,	FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	0x08},
-{"ldspr",	0x03,	USE_RDA,	FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	0x08},
-{"sync",	0x04,	USE_NONE,	FRMT_SYS,	CPID_MAIN,	MASK_NO_IMM,	0x08},
-{"pmir",	0x05,	USE_I,		FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	0x08},
-{"pmd",		0x06, 	USE_I,		FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	0x08},
+{"syscall",	0x00,	USE_RDAI,	FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	OPC_SYS},
+{"sysret",	0x01,	USE_RDAI,	FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	OPC_SYS},
+{"stspr",	0x02,	USE_RDA,	FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	OPC_SYS},
+{"ldspr",	0x03,	USE_RDA,	FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	OPC_SYS},
+{"sync",	0x04,	USE_NONE,	FRMT_SYS,	CPID_MAIN,	MASK_NO_IMM,	OPC_SYS},
+{"pmir",	0x05,	USE_I,		FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	OPC_SYS},
+{"pmd",		0x06, 	USE_I,		FRMT_SYS,	CPID_MAIN,	MASK_IMM_SYS,	OPC_SYS},
 /*	Macro Instructions														*/
 /* Name  	MID		args		frmt		cpid		imm_mask		opc	*/
-{"call",	M_CALL,	USE_RAI_O,	FRMT_J,		CPID_MACRO,	MASK_IMM_J,		0x07},
-{"la",		M_LA,	USE_RDI,	FRMT_LI,	CPID_MACRO,	MASK_IMM_LI,	0x02},
-{"ret",		M_RET,	USE_RAI_O,	FRMT_J,		CPID_MACRO, MASK_IMM_J,		0x06},
+{"call",	M_CALL,	USE_RAI_O,	FRMT_J,		CPID_MACRO,	MASK_IMM_J,		OPC_JLNK},
+{"la",		M_LA,	USE_RDI,	FRMT_LI,	CPID_MACRO,	MASK_IMM_LI,	OPC_LI},
+{"ret",		M_RET,	USE_RAI_O,	FRMT_J,		CPID_MACRO, MASK_IMM_J,		OPC_JMP},
 {0,			0,		0,			0,			0,			0,				0   }
 };

@@ -135,7 +135,7 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 						GET_IMM_S(insn_word),\
 						fusion_gpreg_name[ GET_RSA(insn_word) ] );
 	
-	} else if((opc == 0x06) || (opc == 0x07)){// else if( IS_J_TYPE(insn_word) ) {
+	} else if((opc == OPC_JMP) || (opc == OPC_JLNK)){// else if( IS_J_TYPE(insn_word) ) {
 		if( GET_RSA(insn_word) == 0x00 ) { //if just a normal jump
 			if ( IS_JLNK_INSN( insn_word ) ) //if jump and link
 				fpr(stream, "jal\t%d",  SEXT_21B(GET_IMM_J(insn_word))  );
