@@ -29,9 +29,9 @@
 #include "opintl.h"
 #include "elf-bfd.h"
 
-#define SEXT_14B(N)			( ((N) & 0x3fff) | ( ( ((N) & 0x2000) ? 0xffffd000 : 0 ) ) )
+#define SEXT_14B(N)			( ((N) & 0x3fff) | ( ( ((N) & 0x2000) ? 0xffffc000 : 0 ) ) )
 #define SEXT_12B(N)			( ((N) & 0xfff ) | ( ( ((N) & 0x800 ) ? 0xfffff000 : 0 ) ) )
-#define SEXT_21B(N)			( ((N) & 0x1ffff) | ( ( ((N) & 0x10000) ? 0xfffe0000 : 0 ) ) )
+#define SEXT_21B(N)			( ((N) & 0x1fffff) | ( ( ((N) & 0x100000) ? 0xffe00000 : 0 ) ) )
 
 
 //extern const fusion_inst_t fusion_inst[128];
@@ -61,10 +61,15 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 
 	if ((status = info->read_memory_func (addr, buf_insn, 4, info)))
 		goto fail;
-//	fpr (stream, "%s", fusion_inst[opcode].name);
+	//in data section
+	if( ( (unsigned long int) addr) > 0x2000000  ){
+		fpr(stream, "ASCII: %c %c %c %c", (char)buf_insn[3], (char)buf_insn[2],\
+										(char)buf_insn[1], (char)buf_insn[0]);
+		return 4;
+		
+	}
 	insn_word = (insn_t) bfd_getb32(buf_insn);
 	opc = GET_OPC(insn_word);
-//	printf("opc: %x\n", opc );
 	//Figure out format
 	
 	if( IS_R_TYPE(insn_word) ) {	//need to get alu op to determine instruction
@@ -138,9 +143,9 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 	} else if((opc == OPC_JMP) || (opc == OPC_JLNK)){// else if( IS_J_TYPE(insn_word) ) {
 		if( GET_RSA(insn_word) == 0x00 ) { //if just a normal jump
 			if ( IS_JLNK_INSN( insn_word ) ) //if jump and link
-				fpr(stream, "jal\t%d",  SEXT_21B(GET_IMM_J(insn_word))  );
+				fpr(stream, "jal\t%d", (signed ) SEXT_21B(GET_IMM_J(insn_word))  );
 			else if (IS_JMP_INSN( insn_word ) )
-				fpr(stream, "j\t%d",  SEXT_21B(GET_IMM_J(insn_word))  );
+				fpr(stream, "j\t%d", (signed) SEXT_21B(GET_IMM_J(insn_word))  );
 			else
 				fpr(stream, "nri"); //not a real jump
 		} else { //using register, no possible error here
@@ -159,7 +164,7 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 			fpr(stream, "%s\t$%s,$%s,%d", insn->name,\
 							fusion_gpreg_name[ GET_RSA(insn_word) ],\
 							fusion_gpreg_name[ GET_RSB(insn_word) ],\
-							SEXT_14B(GET_IMM_B(insn_word)) );
+							(signed) SEXT_14B(GET_IMM_B(insn_word)) );
 	
 	} else if( IS_SYS_TYPE(insn_word) ) {
 			insn = &fusion_insn_SYS[ GET_FUNCT_SYS(insn_word) ];

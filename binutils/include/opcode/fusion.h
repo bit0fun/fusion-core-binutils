@@ -109,8 +109,8 @@
 #define GET_IMM_LI(i)		(MASK_IMM_LI & i)
 #define GET_FUNCT_S(i)		( (MASK_FUNCT_S & i) >> 24 ) & 0x3
 #define GET_IMM_S(i)		(MASK_IMM_LO_S & i) | ( (MASK_IMM_HI_S & i) >> 10)
-#define GET_IMM_J(i)		(MASK_IMM_LO_J & i) | ( (MASK_IMM_HI_J & i) >> 5)	
-#define GET_IMM_B(i)		( (MASK_IMM_LO_B & i) >> 2 ) | ( (MASK_IMM_HI_B & i) >> 12 ) 
+#define GET_IMM_J(i)		(MASK_IMM_LO_J & i) | ( (MASK_IMM_HI_J & i) >> SHFT_IMM_HI_J)	
+#define GET_IMM_B(i)		( (MASK_IMM_LO_B & i) >> SHFT_IMM_LO_B ) | ( (MASK_IMM_HI_B & i) >> SHFT_IMM_HI_B ) 
 #define GET_FUNCT_B(i)		(MASK_FUNCT_B & i)
 #define GET_FUNCT_SYS(i)	(MASK_FUNCT_SYS & i) >> 8
 #define GET_IMM_SYS(i)		(MASK_IMM_SYS & i)
@@ -171,18 +171,6 @@
 #define CPID_MAX		2
 
 /*Defines for Opcodes*/
-/* Old definitions
-#define OPC_INT			0x01
-#define OPC_IMM			0x03
-#define OPC_LD			0x12
-#define OPC_LI			0x02
-#define OPC_ST			0x3a
-#define OPC_JMP			0x06
-#define OPC_JLNK		0x07
-#define OPC_BRANCH		0x05
-#define OPC_SYS			0x08
-*/
-
 #define OPC_INT			0x13 //010011
 #define OPC_IMM			0x16 //010110
 #define OPC_LD			0x1e //011110
@@ -192,6 +180,8 @@
 #define OPC_JLNK		0x04 //000100
 #define OPC_BRANCH		0x0d //001101
 #define OPC_SYS			0x20 //100000
+
+
 
 /*Instruction bits*/
 typedef uint32_t insn_t;

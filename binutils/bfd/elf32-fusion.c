@@ -29,6 +29,8 @@
 #include "elf/fusion.h"
 #include "opcode/fusion-opc.h"
 
+#define  MASK_ALL	0xffffffff
+
 static reloc_howto_type fusion_elf_howto_table[] = {
 	/*Relocation does nothing*/
 	HOWTO (R_FUSION_NONE,				/* Type */
@@ -71,8 +73,8 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			bfd_elf_generic_reloc,		/*special_function*/
 			"R_FUSION_LI",				/*name*/
 			FALSE,						/*partial_inplace*/
-			0xffffffff,							/*src_mask*/
-			0,//0x0000ffff,					/*dst_mask*/
+			0,//0xffffffff,							/*src_mask*/
+			0x0000ffff,					/*dst_mask*/
 			FALSE),						/*pcrel_offset*/
 	/*Load Upper Immediate constant relocation*/
 	HOWTO (R_FUSION_LUI,				/* Type */
@@ -142,7 +144,7 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			"R_FUSION_I",				/*name*/
 			FALSE,						/*partial_inplace*/
 			0xffffffff,					/*src_mask*/
-			0,//GEN_I_IMM(MASK_IMM_I),		/*dst_mask*/
+			0xffffffff,//GEN_I_IMM(MASK_IMM_I),		/*dst_mask*/
 			FALSE),						/*pcrel_offset*/
 
 	/*Local Symbol relative relocation*/
@@ -202,8 +204,8 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			bfd_elf_generic_reloc,		/*special_function*/
 			"R_FUSION_BRANCH",			/*name*/
 			FALSE,						/*partial_inplace*/
-			0xffff,					/*src_mask*/
-			0,		/*dst_mask*/
+			GET_IMM_B(MASK_ALL),		/*src_mask*/
+			GEN_B_IMM(MASK_ALL),		/*dst_mask*/
 			TRUE),						/*pcrel_offset*/
 	/*21 Bit PC Relative Jump*/
 	HOWTO (R_FUSION_JUMP,
@@ -212,26 +214,26 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			32,							/*bit size*/
 			TRUE,						/*pc_relative*/
 			0,							/*bit position*/
-			complain_overflow_signed,	/*complain on overflow*/
+			complain_overflow_dont,		/*complain on overflow*/
 			bfd_elf_generic_reloc,		/*special_function*/
 			"R_FUSION_JUMP",			/*name*/
 			FALSE,						/*partial_inplace*/
-			0xffffffff,					/*src_mask*/
-			0,							/*dst_mask*/
+			0,//GET_IMM_J(MASK_ALL),		/*src_mask*/
+			GEN_J_IMM(MASK_ALL),		/*dst_mask*/
 			TRUE),						/*pcrel_offset*/
-	/*21 Bit PC Relative Jump Register*/
+	/*21 Bit PC Absolute Jump Register*/
 	HOWTO (R_FUSION_JUMP_O,
 			0,							/*rightshift*/
 			2,							/*size*/
 			32,							/*bit size*/
 			FALSE,						/*pc_relative*/
 			0,							/*bit position*/
-			complain_overflow_signed,	/*complain on overflow*/
+			complain_overflow_dont,		/*complain on overflow*/
 			bfd_elf_generic_reloc,		/*special_function*/
 			"R_FUSION_JUMP_O",			/*name*/
 			FALSE,						/*partial_inplace*/
-			0xffffffff,					/*src_mask*/
-			0,							/*dst_mask*/
+			0,//GEN_J_IMM(MASK_ALL),	/*src_mask*/
+			GEN_J_IMM(MASK_ALL),		/*dst_mask*/
 			FALSE),						/*pcrel_offset*/
 };
 
