@@ -507,7 +507,6 @@ static void macro_build(expressionS *ep, const char* name, const char* fmt, ...)
 	insn.insn_word = 0; //clear insn to make sure it doesn't have extra numbers
 	/*this may change, but is copied off of riscv for now*/
 	INSERT_OPERAND(GEN_OPC(mo->opc), insn);
-	//insn.insn_word = (mo->opc) << 26;
 	if((mo->opc) == OPC_LI) {
 		INSERT_OPERAND(GEN_DSEL_LI(mo->index), insn);	
 	} else if((mo->opc) == OPC_IMM) {
@@ -1778,14 +1777,7 @@ void md_show_usage(FILE* stream ATTRIBUTE_UNUSED){
 
 void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 	bfd_byte *buf =(bfd_byte*)( fixP->fx_where + fixP->fx_frag->fr_literal );
-	//long val = *valP;
-//	long newval;
-//	long max, min;
-//	offsetT loc;
-//	segT sub_segment;
 	fixP->fx_addnumber = *valP;
-//	as_warn(_("In md_apply_fix"));
-//	max = min = 0;
 	switch(fixP->fx_r_type){
 		case BFD_RELOC_32:
 		case BFD_RELOC_8:
@@ -1793,7 +1785,6 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 		case BFD_RELOC_16:
 		case BFD_RELOC_FUSION_STORE:
 		case BFD_RELOC_FUSION_LOAD:
-//		case BFD_RELOC_FUSION_21:
 #ifdef DEBUG
 		as_warn(_("Const_reloc: %08lx"), (unsigned long int)fusion_apply_const_reloc(fixP->fx_r_type, *valP));
 #endif
@@ -1811,12 +1802,12 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 				break;
 			 if(fixP->fx_addsy){
 				 bfd_vma target = (S_GET_VALUE(fixP->fx_addsy) + *valP);
-				 bfd_vma delta = (target - md_pcrel_from(fixP)) << 1;
-#ifdef DEBUG
+				 bfd_vma delta = (target - md_pcrel_from(fixP));
+//#ifdef DEBUG
 				 as_warn(_("Target: %lx"), (unsigned long int)target);
 				 as_warn(_("Delta: %lx"), (unsigned long int)delta);
 				 as_warn(_("md_pcrel_from(fixP): %lx"), (unsigned long int)md_pcrel_from(fixP));
-#endif
+//#endif
 				 if ( ( ( (signed int) delta ) < -8192) || ( ( (signed int) delta ) > 8191)){
 					 as_bad_where(fixP->fx_file, fixP->fx_line,_("too large pc relative branch"));
 				 }
@@ -1848,6 +1839,9 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 			if(fixP->fx_addsy){
 				bfd_vma target = (S_GET_VALUE(fixP->fx_addsy) + *valP);
 				bfd_vma delta = (target - md_pcrel_from(fixP));
+				as_warn(_("Target: %x"), (unsigned int)target);
+				as_warn(_("Delta: %x"), (unsigned int)delta);
+			 	as_warn(_("md_pcrel_from(fixP): %lx"), (unsigned long int)md_pcrel_from(fixP));
 #ifdef DEBUG
 				as_warn(_("Target: %x"), (unsigned int)target);
 				as_warn(_("Delta: %x"), (unsigned int)delta);
@@ -1902,22 +1896,19 @@ arelent *tc_gen_reloc(asection* section ATTRIBUTE_UNUSED, fixS *fixp){
 	reloc->sym_ptr_ptr = (asymbol **) xmalloc( sizeof( asymbol* ) );
 	*reloc->sym_ptr_ptr= symbol_get_bfdsym(fixp->fx_addsy);
 	if(fixp->fx_r_type ==  BFD_RELOC_FUSION_21_PCREL) {
-//		bfd_vma delta = (fixp->fx_frag->fr_address + md_pcrel_from(fixp));
 		bfd_vma delta = (fixp->fx_frag->fr_address + fixp->fx_addnumber);
 		if ( ( ( (signed int) delta ) < -1048576) || ( ( (signed int) delta ) > 1048575)) {
 				 	as_bad_where(fixp->fx_file, fixp->fx_line,_("too large pc relative jump"));
 		} else{
-			as_warn(_("Jump delta: %08lx"), (unsigned long int) delta);
-			reloc->addend = GEN_J_IMM( (delta )  ) ;
+			reloc->addend = GEN_J_IMM( (delta ) ) ;
 			reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
 		}
 	}	else if (fixp->fx_r_type ==  BFD_RELOC_FUSION_14_PCREL){
-		//	bfd_vma delta = (fixp->fx_frag->fr_address + md_pcrel_from(fixp)); //funny stuff seems to happen otherwise
 			bfd_vma delta = (fixp->fx_frag->fr_address + fixp->fx_addnumber);
 			if ( ( ( (signed int) delta ) < -8192) || ( ( (signed int) delta ) > 8191)){
 				as_bad_where(fixp->fx_file, fixp->fx_line,_("too large pc relative branch")); 
 	 		} else {
-				reloc->addend = GEN_B_IMM( (delta)  ) ;
+				reloc->addend = delta;//GEN_B_IMM(( (delta ) ) );
 				reloc->address = fixp->fx_frag->fr_address + fixp->fx_where; 
 			}
 	} else if(fixp->fx_r_type == BFD_RELOC_FUSION_21 ) {

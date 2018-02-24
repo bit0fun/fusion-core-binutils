@@ -24,13 +24,23 @@
 #include "sysdep.h"
 #include "bfd.h"
 #include "libbfd.h"
+#include "bfdlink.h"
+#include "genlink.h"
 #include "opcode/fusion.h"
 #include "elf-bfd.h"
 #include "elf/fusion.h"
 #include "opcode/fusion-opc.h"
 
-#define  MASK_ALL	0xffffffff
+#define sec_addr(sec) ((sec)->output_section->vma + (sec)->output_offset)
 
+
+#define  MASK_ALL	0xffffffff
+static bfd_reloc_status_type perform_relocation(const reloc_howto_type *howto,
+							const Elf_Internal_Rela *rel,
+							bfd_vma value,
+							asection* input_section,
+							bfd* input_bfd,
+							bfd_byte* contents);
 static reloc_howto_type fusion_elf_howto_table[] = {
 	/*Relocation does nothing*/
 	HOWTO (R_FUSION_NONE,				/* Type */
@@ -200,11 +210,11 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			32,							/*bit size*/
 			TRUE,						/*pc_relative*/
 			0,							/*bit position*/
-			complain_overflow_signed,	/*complain on overflow*/
+			complain_overflow_dont,		/*complain on overflow*/
 			bfd_elf_generic_reloc,		/*special_function*/
 			"R_FUSION_BRANCH",			/*name*/
 			FALSE,						/*partial_inplace*/
-			GET_IMM_B(MASK_ALL),		/*src_mask*/
+			0,//GET_IMM_B(MASK_ALL),		/*src_mask*/
 			GEN_B_IMM(MASK_ALL),		/*dst_mask*/
 			TRUE),						/*pcrel_offset*/
 	/*21 Bit PC Relative Jump*/
@@ -306,8 +316,23 @@ static bfd_reloc_status_type fusion_final_link_relocate(reloc_howto_type* howto,
 				bfd_vma relocation){
 
 	bfd_reloc_status_type r= bfd_reloc_ok;
-
+	bfd_byte *hit_data = contents + rel->r_offset;
+	bfd_vma  rvalue1;
 	switch(howto->type){
+		case R_FUSION_BRANCH:
+				relocation -= (input_section->output_section->vma
+						+ input_section->output_offset);
+				relocation -= rel->r_offset;
+				relocation += rel->r_addend;
+				relocation = (((1 << (howto->bitsize - 1)) - 1) << 1) | 1;
+				relocation = GEN_B_IMM(relocation);
+				relocation &= howto->dst_mask;
+				rvalue1 = bfd_get_32(input_bfd, hit_data);
+				//rvalue1 &= ~(0x03e007fc); //bit mask for branch immediate; clearing current immediate 
+				relocation |= rvalue1; //getting rest of instruction, with new immediate value
+				bfd_put_32(input_bfd, relocation, hit_data);
+			break;
+
 		default:
 				r = _bfd_final_link_relocate(howto, input_bfd, input_section,
 								contents, rel->r_offset,
@@ -317,6 +342,54 @@ static bfd_reloc_status_type fusion_final_link_relocate(reloc_howto_type* howto,
 
 }
 
+/* for static relocations */
+
+static bfd_reloc_status_type perform_relocation(const reloc_howto_type *howto,
+							const Elf_Internal_Rela *rel,
+							bfd_vma value,
+							asection* input_section,
+							bfd* input_bfd,
+							bfd_byte* contents){
+	if(howto->pc_relative)
+		value -= sec_addr(input_section) + rel->r_offset;
+	value += rel->r_addend;
+	switch( ELF32_R_TYPE(rel->r_info) ) {
+		case R_FUSION_NONE:
+		case R_FUSION_32:
+		//	break; 	//no relocation
+		case R_FUSION_LI:
+		case R_FUSION_LUI:
+		case R_FUSION_LI_PCREL:
+		case R_FUSION_LUI_PCREL:
+			//value = GEN_LI_IMM( value ); //generate proper value for load immediate
+		//	break;
+		case R_FUSION_SYS:
+		//	value = GEN_SYS_IMM( value );
+		//	break;
+		case R_FUSION_I:
+		//	value = GEN_I_IMM( value );
+		//	break;
+		case R_FUSION_STORE:
+		//  value = GEN_S_IMM( value );
+		//  break;
+		case R_FUSION_LOAD:
+		//	value = GEN_L_IMM( value );
+		//	break;
+		case R_FUSION_JUMP:
+		case R_FUSION_JUMP_O:
+		// value = GEN_J_IMM( value );
+			break;
+		case R_FUSION_BRANCH:
+			value = GEN_B_IMM( value );
+			break;
+		default:
+			return bfd_reloc_notsupported;
+	}
+	bfd_vma word = bfd_get( howto->bitsize, input_bfd, contents + rel->r_offset);
+	word = (word & ~howto->dst_mask) | (value & howto->dst_mask);
+	bfd_put(howto->bitsize, input_bfd, word, contents + rel->r_offset);
+	return bfd_reloc_ok;
+}
 /*ELF Relocation*/
 static bfd_boolean fusion_elf_relocate_section(bfd* output_bfd,
 									struct bfd_link_info* info,
@@ -375,8 +448,40 @@ static bfd_boolean fusion_elf_relocate_section(bfd* output_bfd,
 							rel, 1, relend, howto, 0, contents);
 		if(bfd_link_relocatable(info))
 				continue;
-		r = fusion_final_link_relocate(howto, input_bfd, input_section,
-						contents, rel, relocation);
+		/* relocations work for everything but branches right now, so let's
+		 * leave them alone */
+		switch(r_type){
+			case R_FUSION_NONE:
+			case R_FUSION_32:
+			//	break; 	//no relocation
+			case R_FUSION_LI:
+			case R_FUSION_LUI:
+			case R_FUSION_LI_PCREL:
+			case R_FUSION_LUI_PCREL:
+				//	break;
+			case R_FUSION_SYS:
+			//	break;
+			case R_FUSION_I:
+			//	break;
+			case R_FUSION_STORE:
+			//  break;
+			case R_FUSION_LOAD:
+			//	break;
+			case R_FUSION_JUMP:
+			case R_FUSION_JUMP_O:
+				r = fusion_final_link_relocate(howto, input_bfd, input_section,
+						contents, rel, relocation);	
+				break;
+			case R_FUSION_BRANCH:
+				r = perform_relocation(howto, rel, relocation, input_section,
+							input_bfd, contents);
+				break;
+			default:
+				return bfd_reloc_notsupported;
+
+
+		}
+
 		if(r != bfd_reloc_ok){
 			const char* msg = NULL;
 
@@ -470,8 +575,6 @@ static bfd_boolean fusion_elf_check_relocs(bfd* abfd,
 }
 
 
-/* for static relocations */
-//static bfd_reloc_status_type perform_relocation
 
 
 #define ELF_ARCH			bfd_arch_fusion
