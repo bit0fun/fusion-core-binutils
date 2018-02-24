@@ -1437,14 +1437,20 @@ bfd_reloc_code_real_type return_reloc(fusion_opc_info_t* insn, char* str){
 		case OPC_LI:
 		 //need to determine what kind of load immediate
 			switch(dsel){
-				case 3: //lui
-				case 4: //lusi
-				case 5: //lugi
+				case 3:  //lui
+				case 4:  //lusi
+				case 5:  //lugi
+				case 11: //luni
+				case 12: //lunsi
+				case 13: //lungi
 					ret_reloc = BFD_RELOC_FUSION_HI16;
 					break;
-				case 0:	//li
-				case 1: //lsi
-				case 2: //lgi
+				case 0:	 //li
+				case 1:  //lsi
+				case 2:  //lgi
+				case 8:  //lni
+				case 9:	 //lnsi
+				case 10: //lngi
 				default:
 					ret_reloc = BFD_RELOC_16;
 					break;
@@ -1803,11 +1809,11 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 			 if(fixP->fx_addsy){
 				 bfd_vma target = (S_GET_VALUE(fixP->fx_addsy) + *valP);
 				 bfd_vma delta = (target - md_pcrel_from(fixP));
-//#ifdef DEBUG
+#ifdef DEBUG
 				 as_warn(_("Target: %lx"), (unsigned long int)target);
 				 as_warn(_("Delta: %lx"), (unsigned long int)delta);
 				 as_warn(_("md_pcrel_from(fixP): %lx"), (unsigned long int)md_pcrel_from(fixP));
-//#endif
+#endif
 				 if ( ( ( (signed int) delta ) < -8192) || ( ( (signed int) delta ) > 8191)){
 					 as_bad_where(fixP->fx_file, fixP->fx_line,_("too large pc relative branch"));
 				 }
@@ -1839,9 +1845,6 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 			if(fixP->fx_addsy){
 				bfd_vma target = (S_GET_VALUE(fixP->fx_addsy) + *valP);
 				bfd_vma delta = (target - md_pcrel_from(fixP));
-				as_warn(_("Target: %x"), (unsigned int)target);
-				as_warn(_("Delta: %x"), (unsigned int)delta);
-			 	as_warn(_("md_pcrel_from(fixP): %lx"), (unsigned long int)md_pcrel_from(fixP));
 #ifdef DEBUG
 				as_warn(_("Target: %x"), (unsigned int)target);
 				as_warn(_("Delta: %x"), (unsigned int)delta);
