@@ -140,7 +140,7 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			"R_FUSION_SYS",				/*name*/
 			FALSE,						/*partial_inplace*/
 			0xffffffff,					/*src_mask*/
-			0,							/*dst_mask*/
+			GEN_SYS_IMM(MASK_ALL),		/*dst_mask*/
 			FALSE),						/*pcrel_offset*/
 	/*System constant relocation*/
 	HOWTO (R_FUSION_I,					/* Type */
@@ -185,7 +185,7 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			"R_FUSION_LOAD",			/*name*/
 			FALSE,						/*partial_inplace*/
 			0xffffffff,					/*src_mask*/
-			0,							/*dst_mask*/
+			GEN_L_IMM(MASK_ALL),		/*dst_mask*/
 			FALSE),						/*pcrel_offset*/
 	/*14 Bit Load Relocation*/
 	HOWTO (R_FUSION_STORE,
@@ -199,7 +199,7 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			"R_FUSION_STORE",			/*name*/
 			FALSE,						/*partial_inplace*/
 			0xffffffff,					/*src_mask*/
-			0,							/*dst_mask*/
+			GEN_S_IMM(MASK_ALL),		/*dst_mask*/
 			FALSE),						/*pcrel_offset*/
 
 

@@ -411,7 +411,7 @@ static insn_t fusion_apply_const_reloc(bfd_reloc_code_real_type reloc_type,
 		case BFD_RELOC_8:
 			return GEN_SYS_IMM(value);
 		case BFD_RELOC_FUSION_STORE:
-			return GEN_S_IMM(value);
+			return GEN_S_IMM( (value - 4) ); //unsure why this happens
 		case BFD_RELOC_FUSION_LOAD:
 			return GEN_L_IMM(value);
 		case BFD_RELOC_FUSION_12:
@@ -1357,7 +1357,7 @@ int parse_rabi_offset(int* rsa, int* rsb, int* imm, char** op_end, expressionS* 
 	while( (**op_end == ' ') || (**op_end == '\t') )
 		   (*op_end)++;	
 
-	*rsa = parse_register_operand(op_end);
+	*rsb = parse_register_operand(op_end);
 	if(**op_end != ','){
 		as_warn(_("expecting comma deliminated operands"));
 	}
@@ -1376,7 +1376,7 @@ int parse_rabi_offset(int* rsa, int* rsb, int* imm, char** op_end, expressionS* 
 		(*op_end)++;
 	}
 	(*op_end)++;
-	*rsb = parse_register_operand(op_end);
+	*rsa = parse_register_operand(op_end);
 	(*op_end)++;
 //	if(*op_end != ')'){
 //		as_bad(_("expecting `)' after register: %s"), op_end);
