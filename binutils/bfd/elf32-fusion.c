@@ -180,25 +180,25 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			14,							/*bit size*/
 			TRUE,						/*pc_relative*/
 			0,							/*bit position*/
-			complain_overflow_signed,	/*complain on overflow*/
+			complain_overflow_dont,	/*complain on overflow*/
 			bfd_elf_generic_reloc,		/*special_function*/
 			"R_FUSION_LOAD",			/*name*/
 			FALSE,						/*partial_inplace*/
-			0xffffffff,					/*src_mask*/
+			0,							/*src_mask*/
 			GEN_L_IMM(MASK_ALL),		/*dst_mask*/
 			FALSE),						/*pcrel_offset*/
 	/*14 Bit Load Relocation*/
 	HOWTO (R_FUSION_STORE,
 			0,							/*rightshift*/
 			2,							/*size*/
-			14,							/*bit size*/
+			32,							/*bit size*/
 			TRUE,						/*pc_relative*/
 			0,							/*bit position*/
-			complain_overflow_signed,	/*complain on overflow*/
+			complain_overflow_dont,	/*complain on overflow*/
 			bfd_elf_generic_reloc,		/*special_function*/
 			"R_FUSION_STORE",			/*name*/
 			FALSE,						/*partial_inplace*/
-			0xffffffff,					/*src_mask*/
+			0,							/*src_mask*/
 			GEN_S_IMM(MASK_ALL),		/*dst_mask*/
 			FALSE),						/*pcrel_offset*/
 
@@ -319,6 +319,20 @@ static bfd_reloc_status_type fusion_final_link_relocate(reloc_howto_type* howto,
 	bfd_byte *hit_data = contents + rel->r_offset;
 	bfd_vma  rvalue1;
 	switch(howto->type){
+		case R_FUSION_LOAD:
+				relocation = GEN_L_IMM( relocation );
+				relocation &= howto->dst_mask;
+				rvalue1 = bfd_get_32(input_bfd, hit_data);
+				relocation |= rvalue1;
+				bfd_put_32(input_bfd, relocation, hit_data);
+				break;
+		case R_FUSION_STORE:
+				relocation = GEN_S_IMM( relocation );
+				relocation &= howto->dst_mask;
+				rvalue1 = bfd_get_32(input_bfd, hit_data);
+				relocation |= rvalue1;
+				bfd_put_32(input_bfd, relocation, hit_data);
+				break;
 		case R_FUSION_BRANCH:
 				relocation -= (input_section->output_section->vma
 						+ input_section->output_offset);
@@ -369,16 +383,19 @@ static bfd_reloc_status_type perform_relocation(const reloc_howto_type *howto,
 		case R_FUSION_I:
 		//	value = GEN_I_IMM( value );
 		//	break;
-		case R_FUSION_STORE:
-		//  value = GEN_S_IMM( value );
-		//  break;
-		case R_FUSION_LOAD:
+//		case R_FUSION_LOAD:
 		//	value = GEN_L_IMM( value );
 		//	break;
 		case R_FUSION_JUMP:
 		case R_FUSION_JUMP_O:
 		// value = GEN_J_IMM( value );
 			break;
+		case R_FUSION_LOAD:
+			value = GEN_L_IMM( value );
+			break;
+		case R_FUSION_STORE:
+		  	value = GEN_S_IMM( value );
+		  	break;
 		case R_FUSION_BRANCH:
 			value = GEN_B_IMM( value );
 			break;
@@ -463,15 +480,19 @@ static bfd_boolean fusion_elf_relocate_section(bfd* output_bfd,
 			//	break;
 			case R_FUSION_I:
 			//	break;
-			case R_FUSION_STORE:
-			//  break;
+
 			case R_FUSION_LOAD:
 			//	break;
+			case R_FUSION_STORE:
 			case R_FUSION_JUMP:
 			case R_FUSION_JUMP_O:
 				r = fusion_final_link_relocate(howto, input_bfd, input_section,
 						contents, rel, relocation);	
 				break;
+			//case R_FUSION_STORE:
+			//	r = perform_relocation(howto, rel, relocation, input_section,
+				//			input_bfd, contents);
+			  //	break;
 			case R_FUSION_BRANCH:
 				r = perform_relocation(howto, rel, relocation, input_section,
 							input_bfd, contents);

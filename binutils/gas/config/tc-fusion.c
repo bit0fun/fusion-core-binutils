@@ -18,7 +18,7 @@
    the Free Software Foundation, 51 Franklin Street - Fifth Floor,
    Boston, MA 02110-1301, USA.  */
 
-/* Contributed by Dylan Wadler  */
+/* Contributed by Dylan Wadler: dylan@fusion-core.org  */
 
 #define WORST_CASE	4
 //#define DEBUG
@@ -411,7 +411,7 @@ static insn_t fusion_apply_const_reloc(bfd_reloc_code_real_type reloc_type,
 		case BFD_RELOC_8:
 			return GEN_SYS_IMM(value);
 		case BFD_RELOC_FUSION_STORE:
-			return GEN_S_IMM( (value - 4) ); //unsure why this happens
+			return GEN_S_IMM( (value) ); //unsure why this happens
 		case BFD_RELOC_FUSION_LOAD:
 			return GEN_L_IMM(value);
 		case BFD_RELOC_FUSION_12:

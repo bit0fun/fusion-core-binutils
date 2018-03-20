@@ -29,14 +29,6 @@ OUTPUT_ARCH(${ARCH})
 
 ${LIB_SEARCH_DIRS}
 ${RELOCATING+ENTRY(${ENTRY})}
-#MEMORY
-#{
-#		rom			: ORIGIN = ${TEXT_START_ADDRESS}		LENGTH = 2G
-#		ram			: ORIGIN = ${DATA_ADDR}		LENGTH = 0x7FFF8000
-
-#}
-
-
 
 SECTIONS
 {
@@ -77,5 +69,6 @@ SECTIONS
 	}
 	${RELOCATING+ end = .;}
 	${RELOCATING+ _end = .;}
+	data_size = DEFINED(data_size) ? data_size : . ;
 }
 EOF
