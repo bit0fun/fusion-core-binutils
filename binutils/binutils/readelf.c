@@ -105,6 +105,7 @@
 #include "elf/fr30.h"
 #include "elf/frv.h"
 #include "elf/ft32.h"
+#include "elf/fusion.h"
 #include "elf/h8.h"
 #include "elf/hppa.h"
 #include "elf/i386.h"
@@ -1298,6 +1299,10 @@ dump_relocations (FILE * file,
 
 	case EM_FT32:
 	  rtype = elf_ft32_reloc_type (type);
+	  break;
+	
+	case EM_FUSION:
+	  rtype = elf_fusion_reloc_type (type);
 	  break;
 
 	case EM_MCORE:
