@@ -302,8 +302,9 @@ struct regname{
 };
 
 enum reg_file{
-	REGF_GPR,
-	REGF_SYS,
+	REGF_GPR,	/* General Purpose*/
+	REGF_FPR,	/* Floating Point */
+	REGF_SYS,	/* System */
 	REGF_MAX
 };
 
@@ -331,14 +332,14 @@ static void hash_reg_names(enum reg_file regf, const char* const names[], unsign
 	}
 
 }
-/*
+
 static unsigned int reg_lookup_internal(char* s, enum reg_file regf){
 	struct regname* r = (struct regname*) hash_find(reg_names_hash, s);
 	if( r == NULL || DECODE_REG_FILE(r) != regf)
 		return -1;
 	return DECODE_REG_NUM(r);
 }
-
+/*
 static int reg_lookup(char** sptr, enum reg_file regf){
 	char* s = *sptr;	
 	char* end;
@@ -1821,6 +1822,25 @@ int md_parse_option(int c ATTRIBUTE_UNUSED, const char* arg ATTRIBUTE_UNUSED){
 
 void md_show_usage(FILE* stream ATTRIBUTE_UNUSED){
 	fprintf(stream, _("\nNo options available at the moment\n"));
+}
+
+/* Debug information additions */
+void fusion_cfi_frame_initial_instructions(void){
+	cfi_add_CFA_def_cfa_register (X_SP);
+}
+
+int tc_fusion_regname_to_dw2regnum( char *regname){
+	int reg; 
+
+	if(( reg = reg_lookup_internal (regname, REGF_GPR)) >= 0)
+		return reg;
+//	if(( reg = reg_lookup_internal (regname, REGF_FPR)) >= 0)
+//		return reg + 32;
+//	if(( reg = reg_lookup_internal (regname, REGF_SYS)) >= 0)
+//		return reg + 64;
+	as_bad (_("unknown register `%s'"), regname);
+	return -1;
+
 }
 
 void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){

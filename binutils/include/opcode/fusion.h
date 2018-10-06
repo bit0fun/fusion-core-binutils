@@ -182,6 +182,24 @@
 #define OPC_SYS			0x20 //100000
 
 
+/* ABI names for selected x-registers
+ *
+ * helpful for debug information */
+
+#define X_RA 4 	/* Return address register */
+#define X_SP 1 	/* Stack pointer register */
+#define X_GP 3	/* Global pointer register */
+#define X_T0 22 /* Temporary register names */
+#define X_T1 23
+#define X_T2 24
+#define X_T3 25
+#define X_T4 26
+#define X_T5 27
+#define X_T6 28
+#define X_T7 29
+#define NGPR 32	/* Number of general purpose registers */
+#define NFPR 32 /* Number of floating point registers */
+
 
 /*Instruction bits*/
 typedef uint32_t insn_t;

@@ -18,6 +18,7 @@
    with GAS; see the file COPYING.  If not, write to the Free Software
    Foundation, 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.  */
 
+#include "opcode/fusion.h"
  
 
  #define TC_FUSION 1
@@ -48,3 +49,23 @@ extern void fusion_pop_insert(void);
 #define md_pop_insert() fusion_pop_insert()
 
 #define md_section_align(SEGMENT, SIZE) (SIZE)
+
+
+
+/* Debug information generation related options */
+#define TARGET_USE_CFIPOP 1
+
+#define tc_cfi_frame_initial_instructions fusion_cfi_frame_initial_instructions
+extern void fusion_cfi_frame_initial_instructions (void);
+
+#define tc_regname_to_dw2regnum tc_fusion_regname_to_dw2regnum
+extern int tc_fusion_regname_to_dw2regnum (char *);
+
+/* Return address register */
+#define DWARF2_DEFAULT_RETURN_COLUMN X_RA
+
+/* Alignment for CIE data */
+#define DWARF2_CIE_DATA_ALIGNMENT -4
+
+/* Adjust debug line number after relaxation. May not be used right now? */
+#define DWARF2_USE_FIXED_ADVANCE_PC 1
