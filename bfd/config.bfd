@@ -507,6 +507,11 @@ case "${targ}" in
     targ_selvecs=frv_elf32_vec
     ;;
 
+  fusion-*-elf)
+  	targ_defvec=fusion_elf32_vec
+	#TODO: Eventually add in option for little or big endian 
+	;;
+
   moxie-*-elf | moxie-*-rtems* | moxie-*-uclinux)
     targ_defvec=moxie_elf32_be_vec
     targ_selvecs=moxie_elf32_le_vec

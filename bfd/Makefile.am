@@ -109,6 +109,7 @@ ALL_MACHINES = \
 	cpu-fr30.lo \
 	cpu-frv.lo \
 	cpu-ft32.lo \
+	cpu-fusion.lo \
 	cpu-h8300.lo \
 	cpu-hppa.lo \
 	cpu-i386.lo \
@@ -196,6 +197,7 @@ ALL_MACHINES_CFILES = \
 	cpu-fr30.c \
 	cpu-frv.c \
 	cpu-ft32.c \
+	cpu-fusion.c \
 	cpu-h8300.c \
 	cpu-hppa.c \
 	cpu-i386.c \
@@ -315,6 +317,7 @@ BFD32_BACKENDS = \
 	elf32-fr30.lo \
 	elf32-frv.lo \
 	elf32-ft32.lo \
+	elf32-fusion.lo \
 	elf32-gen.lo \
 	elf32-h8300.lo \
 	elf32-hppa.lo \
@@ -452,6 +455,7 @@ BFD32_BACKENDS_CFILES = \
 	elf32-fr30.c \
 	elf32-frv.c \
 	elf32-ft32.c \
+	elf32-fusin.c \
 	elf32-gen.c \
 	elf32-h8300.c \
 	elf32-hppa.c \

@@ -2336,6 +2336,8 @@ enum bfd_architecture
 #define bfd_mach_frvtomcat     499     /* fr500 prototype.  */
 #define bfd_mach_fr500         500
 #define bfd_mach_fr550         550
+  bfd_arch_fusion,		/* fusion-core processor */
+#define bdf_mach_fusion		   1
   bfd_arch_moxie,     /* The moxie processor.  */
 #define bfd_mach_moxie         1
   bfd_arch_ft32,      /* The ft32 processor.  */
@@ -3270,6 +3272,14 @@ to compensate for the borrow when the low bits are added.  */
   BFD_RELOC_FRV_TLSOFF_RELAX,
   BFD_RELOC_FRV_TLSMOFF,
 
+  /* Fusion Core Relocations */
+  BFD_RELOC_FUSION_STORE, 		/* Store immediate relocations */
+  BFD_RELOC_FUSION_LOAD, 		/* Load immediate relocations */
+  BFD_RELOC_FUSION_14_PCREL, 	/* For branches */
+  BFD_RELOC_FUSION_21_PCREL,	/* For jumps */
+  BFD_RELOC_FUSION_21,			/* For jump offsets */
+  BFD_RELOC_FUSION_HI16,		/* high 16 bits */
+  BFD_RELOC_FUSION_12,			/* absolute number for alu immediate */
 
 /* This is a 24bit GOT-relative reloc for the mn10300.  */
   BFD_RELOC_MN10300_GOTOFF24,

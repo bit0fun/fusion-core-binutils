@@ -2467,6 +2467,25 @@ ENUMDOC
 COMMENT
 
 ENUM
+	BFD_RELOC_FUSION_STORE
+ENUMDOC
+	Fusion-Core Store 14 bit relocation
+ENUM
+	BFD_RELOC_FUSION_LOAD
+ENUMDOC
+	Fusion-Core Load 14 bit relocation
+ENUM
+	BFD_RELOC_FUSION_14_PCREL
+ENUMDOC
+	Fusion-Core Branch 14 bit relative relocation
+ENUM
+	BFD_RELOC_FUSION_21_PCREL
+ENUMDOC
+	Fusion-Core Jump 21 bit relative relocation
+
+
+
+ENUM
   BFD_RELOC_MN10300_GOTOFF24
 ENUMDOC
   This is a 24bit GOT-relative reloc for the mn10300.

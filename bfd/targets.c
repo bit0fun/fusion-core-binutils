@@ -991,6 +991,8 @@ static const bfd_target * const _bfd_target_vector[] =
 	&frv_elf32_vec,
 	&frv_elf32_fdpic_vec,
 
+	&fusion_elf32_vec,
+
 	&h8300_elf32_vec,
 	&h8300_elf32_linux_vec,
 

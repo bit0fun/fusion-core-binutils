@@ -532,6 +532,7 @@ ALL_MACHINES = \
 	cpu-fr30.lo \
 	cpu-frv.lo \
 	cpu-ft32.lo \
+	cpu-fusion.lo \
 	cpu-h8300.lo \
 	cpu-hppa.lo \
 	cpu-i386.lo \
@@ -619,6 +620,7 @@ ALL_MACHINES_CFILES = \
 	cpu-fr30.c \
 	cpu-frv.c \
 	cpu-ft32.c \
+	cpu-fusion.c \
 	cpu-h8300.c \
 	cpu-hppa.c \
 	cpu-i386.c \
@@ -739,6 +741,7 @@ BFD32_BACKENDS = \
 	elf32-fr30.lo \
 	elf32-frv.lo \
 	elf32-ft32.lo \
+	elf32-fusion.lo \
 	elf32-gen.lo \
 	elf32-h8300.lo \
 	elf32-hppa.lo \
@@ -876,6 +879,7 @@ BFD32_BACKENDS_CFILES = \
 	elf32-fr30.c \
 	elf32-frv.c \
 	elf32-ft32.c \
+	elf32-fusion.c \
 	elf32-gen.c \
 	elf32-h8300.c \
 	elf32-hppa.c \
@@ -1339,6 +1343,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpu-fr30.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpu-frv.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpu-ft32.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpu-fusion.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpu-h8300.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpu-hppa.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpu-i386.Plo@am__quote@
@@ -1437,6 +1442,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/elf32-fr30.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/elf32-frv.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/elf32-ft32.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/elf32-fusion.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/elf32-gen.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/elf32-h8300.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/elf32-hppa.Plo@am__quote@
