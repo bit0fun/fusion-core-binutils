@@ -136,7 +136,7 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 	} else if( IS_LI_TYPE(insn_word) ) {
 		insn = &fusion_insn_LI[ GET_DSEL_LI(insn_word) ];
 		fpr(stream, "%s\t%s,\t0x%04lx", insn->name, \
-						fusion_gpreg_name[ GET_RD(insn_word) ],(unsigned long int) GET_IMM_LI(insn_word) );
+						fusion_gpreg_name[ GET_RD(insn_word) ],(unsigned long int) GET_IMM_LI(insn_word));
 	
 	} else if( IS_S_TYPE(insn_word) ) {
 		insn = &fusion_insn_S[ GET_FUNCT_S(insn_word) ];

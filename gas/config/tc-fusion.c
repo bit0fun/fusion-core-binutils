@@ -420,10 +420,10 @@ static insn_t fusion_apply_const_reloc(bfd_reloc_code_real_type reloc_type,
 			return value;
 		case BFD_RELOC_16_PCREL:
 		case BFD_RELOC_16:
-			return GET_IMM_LI(value);
+			return GEN_LI_IMM(value);
 		case BFD_RELOC_HI16_PCREL:
 		case BFD_RELOC_FUSION_HI16:
-			return GET_IMM_LI(value >> 16);
+			return GEN_LI_IMM(value >> 16);
 		case BFD_RELOC_8:
 			return GEN_SYS_IMM(value);
 		case BFD_RELOC_FUSION_STORE:
@@ -1235,7 +1235,6 @@ int parse_rdai( int* rd, int* rsa, int* imm,  char** op_end, expressionS* imm_ex
 	if(**op_end != ','){
 		as_warn(_("expecting comma deliminated operands"));
 	}
-	as_warn(_("Rd: %08x"), (unsigned int)GEN_RD(*rd));
 	(*op_end)++;
 
 	//get rid of spaces and tabs
@@ -1243,7 +1242,6 @@ int parse_rdai( int* rd, int* rsa, int* imm,  char** op_end, expressionS* imm_ex
 		(*op_end)++;
 
 	*rsa = parse_register_operand(op_end);
-	as_warn(_("RSA: %08x"), (unsigned int)GEN_RSA(*rsa));
 	if(**op_end != ','){
 		as_warn(_("expecting comma deliminated operands"));
 	}
@@ -1252,7 +1250,6 @@ int parse_rdai( int* rd, int* rsa, int* imm,  char** op_end, expressionS* imm_ex
 		(*op_end)++;
 
 	parse_imm(imm, op_end, imm_expr, reloc, ip);
-	as_warn(_("IMM: %08x"), (unsigned int)GEN_I_IMM(*rsa));
 	while( (**op_end == ' ') || (**op_end == '\t'))
 		(*op_end)++;
 //	if(**op_end != '\0')
@@ -1699,40 +1696,40 @@ bfd_boolean assemble_insn_bin(char* str, struct fusion_cl_insn* ip, expressionS*
 			break;	
 		/*Load Immeidate Instructions*/
 		case OPC_LI:
-					//check_absolute_expr(ip, imm_expr);
-					ip->insn_word = MAKE_LI_TYPE(Rd, insn->index, imm);
-					break;
-				/*Jump Instruction*/
-				case OPC_JMP:
-					if(RSa != 0)
-						*imm_reloc = BFD_RELOC_FUSION_21;
-					ip->insn_word = MAKE_J_TYPE(RSa, imm);
-					break;
-				/*Jump Link Instruction*/
-				case OPC_JLNK:
-					if(RSa != 0)
-						*imm_reloc = BFD_RELOC_FUSION_21;
-					ip->insn_word = MAKE_JL_TYPE(RSa, imm);
-					break;
-				/*Branch Instructions*/
-				case OPC_BRANCH:
-					ip->insn_word = MAKE_B_TYPE(RSa, RSb, imm, insn->index);
-					break;
-				/*System Instrucitons*/
-				case OPC_SYS:
-					ip->insn_word = MAKE_SYS_TYPE(Rd, RSa, insn->index, imm);
-					break;
-				case 0x00:
-					ip->insn_word = 0x00000000; //since nop
-					break;
-				/*Unknown Instructions*/
-				default:
-					as_bad(_("Unknown opcode, \
+			//check_absolute_expr(ip, imm_expr);
+			ip->insn_word = MAKE_LI_TYPE(Rd, insn->index, imm);
+			break;
+		/*Jump Instruction*/
+		case OPC_JMP:
+			if(RSa != 0)
+				*imm_reloc = BFD_RELOC_FUSION_21;
+			ip->insn_word = MAKE_J_TYPE(RSa, imm);
+			break;
+		/*Jump Link Instruction*/
+		case OPC_JLNK:
+			if(RSa != 0)
+				*imm_reloc = BFD_RELOC_FUSION_21;
+			ip->insn_word = MAKE_JL_TYPE(RSa, imm);
+			break;
+		/*Branch Instructions*/
+		case OPC_BRANCH:
+			ip->insn_word = MAKE_B_TYPE(RSa, RSb, imm, insn->index);
+			break;
+		/*System Instrucitons*/
+		case OPC_SYS:
+			ip->insn_word = MAKE_SYS_TYPE(Rd, RSa, insn->index, imm);
+			break;
+		case 0x00:
+			ip->insn_word = 0x00000000; //since nop
+			break;
+		/*Unknown Instructions*/
+		default:
+			as_bad(_("Unknown opcode, \
 						how did you manage that?: %s"), op_start);
 					ip->insn_word = 0x00000000;
 			break;
 			
-	}
+		}
 	} else{
 		as_bad (_("No co-processor instructions exist yet, don't know \
 					what this is: %s"), op_start);

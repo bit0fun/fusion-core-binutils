@@ -62,7 +62,7 @@
 #define GEN_ALUOP(OP)		( ( (OP) & GET_ALUOP(MASK_ALUOP) ) << OFFSET_ALUOP )
 #define GEN_FUNCT_L(F)		( ( (F) & GET_FUNCT_L(MASK_FUNCT_L) ) << OFFSET_FUNCT_L )
 #define GEN_FUNCT_S(F)		( ( (F) & GET_FUNCT_S(MASK_FUNCT_S) ) << OFFSET_FUNCT_S )
-#define GEN_DSEL_LI(F)		( ( (F) & GET_FUNCT_L(MASK_ALUOP) ) << OFFSET_ALUOP )
+#define GEN_DSEL_LI(F)		( ( (F) & GET_DSEL_LI(MASK_DSEL_LI) ) << OFFSET_DSEL_LI )
 #define GEN_I_IMM(IMM)		( ( (IMM) & GET_IMM_I(MASK_IMM_I) ) << OFFSET_IMM_I )
 #define GEN_S_IMM_HI(IMM)	( ( (IMM) & GET_HI_IMM_S(MASK_IMM_S) ) << OFFSET_IMM_HI_S )
 #define GEN_S_IMM_LO(IMM)	( ( (IMM) & GET_LO_IMM_S(MASK_IMM_S) ) << OFFSET_IMM_LO_S )

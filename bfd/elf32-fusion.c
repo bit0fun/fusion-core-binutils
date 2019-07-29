@@ -84,11 +84,11 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			"R_FUSION_LI",				/*name*/
 			FALSE,						/*partial_inplace*/
 			0,//0xffffffff,							/*src_mask*/
-			0x0000ffff,					/*dst_mask*/
+			MASK_ALL,					/*dst_mask*/
 			FALSE),						/*pcrel_offset*/
 	/*Load Upper Immediate constant relocation*/
 	HOWTO (R_FUSION_LUI,				/* Type */
-			16,							/*rightshift*/
+			0,							/*rightshift*/
 			2,							/*size*/
 			32,							/*bit size*/
 			FALSE,						/*pc_relative*/
@@ -98,7 +98,7 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			"R_FUSION_LUI",				/*name*/
 			FALSE,						/*partial_inplace*/
 			0,					/*src_mask*/
-			0x0000ffff,	/*dst_mask*/
+			MASK_ALL,	/*dst_mask*/
 			FALSE),						/*pcrel_offset*/
 	/*Load Immediate PC relative relocation*/
 	HOWTO (R_FUSION_LI_PCREL,			/* Type */
@@ -112,7 +112,7 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			"R_FUSION_LI_PCREL",		/*name*/
 			FALSE,						/*partial_inplace*/
 			0x00000000,					/*src_mask*/
-			GEN_LI_IMM(MASK_IMM_LI),	/*dst_mask*/
+			MASK_ALL,	/*dst_mask*/
 			TRUE),						/*pcrel_offset*/
 	/*Load Upper Immediate PC relative relocation*/
 	HOWTO (R_FUSION_LUI_PCREL,			/* Type */
@@ -126,7 +126,7 @@ static reloc_howto_type fusion_elf_howto_table[] = {
 			"R_FUSION_LUI_PCREL",		/*name*/
 			FALSE,						/*partial_inplace*/
 			0x00000000,					/*src_mask*/
-			GEN_LI_IMM(MASK_IMM_LI),	/*dst_mask*/
+			MASK_ALL,	/*dst_mask*/
 			TRUE),						/*pcrel_offset*/
 	/*System constant relocation*/
 	HOWTO (R_FUSION_SYS,				/* Type */
@@ -319,6 +319,23 @@ static bfd_reloc_status_type fusion_final_link_relocate(reloc_howto_type* howto,
 	bfd_byte *hit_data = contents + rel->r_offset;
 	bfd_vma  rvalue1;
 	switch(howto->type){
+		case R_FUSION_LI:
+		case R_FUSION_LI_PCREL:
+			relocation = GEN_LI_IMM( relocation );
+			//relocation &= howto->dst_mask;
+			rvalue1 = bfd_get_32(input_bfd, hit_data);
+			relocation |= rvalue1;
+			bfd_put_32(input_bfd, relocation, hit_data);
+
+			break;
+		case R_FUSION_LUI:
+		case R_FUSION_LUI_PCREL:
+			relocation = relocation >> 16;
+			relocation = GEN_LI_IMM( relocation );
+			rvalue1 = bfd_get_32(input_bfd, hit_data);
+			relocation |= rvalue1;
+			bfd_put_32(input_bfd, relocation, hit_data);
+			break;
 		case R_FUSION_LOAD:
 				relocation = GEN_L_IMM( relocation );
 				relocation &= howto->dst_mask;
@@ -372,9 +389,7 @@ static bfd_reloc_status_type perform_relocation(const reloc_howto_type *howto,
 		case R_FUSION_32:
 		//	break; 	//no relocation
 		case R_FUSION_LI:
-		case R_FUSION_LUI:
 		case R_FUSION_LI_PCREL:
-		case R_FUSION_LUI_PCREL:
 			//value = GEN_LI_IMM( value ); //generate proper value for load immediate
 		//	break;
 		case R_FUSION_SYS:
@@ -389,6 +404,11 @@ static bfd_reloc_status_type perform_relocation(const reloc_howto_type *howto,
 		case R_FUSION_JUMP:
 		case R_FUSION_JUMP_O:
 		// value = GEN_J_IMM( value );
+			break;
+		
+		case R_FUSION_LUI:
+		case R_FUSION_LUI_PCREL:
+			value = GEN_LI_IMM( value );
 			break;
 		case R_FUSION_LOAD:
 			value = GEN_L_IMM( value );

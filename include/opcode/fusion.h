@@ -63,49 +63,9 @@
 #if FUSION_LITTLE_ENDIAN 
 /* Little endian defintions */
 
-#define MASK_RD				0x000003e0
-#define MASK_RSA			0x00007c00
-#define MASK_RSB			0x0001f000
-#define MASK_SHFT			0x000007f0	
-#define MASK_ALUOP			0xf0000000
-#define MASK_IMM_I			0x0fff0000
-#define MASK_IMM_L			0xfff80000
-#define MASK_FUNCT_L		0x00006000
-#define MASK_DSEL_LI		MASK_RSA
-#define MASK_IMM_LI			0xffff0000
-#define MASK_FUNCT_S		MASK_RSB
-#define MASK_IMM_S			0xfff00700
-#define MASK_IMM_HI_S		0xfff00000
-#define MASK_IMM_LO_S		0x00000700
-#define MASK_IMM_J			0xffff03e0
-#define MASK_IMM_HI_J		0xffff0000	
-#define MASK_IMM_LO_J		MASK_RD
-#define MASK_IMM_B			0x03fe03e0
-#define MASK_IMM_HI_B		0x03fe0000
-#define MASK_IMM_LO_B		MASK_RD
-#define MASK_FUNCT_B		0xc0000000
-#define MASK_FUNCT_SYS		0x0f000000
-#define MASK_IMM_SYS		0xf0000000
-
-/*Opcode related defines*/
-#define MASK_OPC			0x0000001f
-#define MASK_R_OPC			OPC_INT
-#define MASK_LI_OPC			OPC_LI
-#define MASK_IMM_OPC		OPC_IMM
-#define MASK_B_OPC			OPC_BRANCH
-#define MASK_JMP_OPC		OPC_JMP
-#define MASK_JLNK_OPC		OPC_JLNK
-#define MASK_RMEM_OPC		OPC_LD
-#define MASK_WMEM_OPC		OPC_ST
-#define MASK_SYS_OPC		OPC_SYS //more system instructions may change this
-#define MASK_MSB_OPC		0x00000011	//31st bit of instruction
-#define MASK_NO_IMM			0x00000000
-
-
-
 /* Bitfield offsets */
 #define OFFSET_OPC			0
-#define OFFSET_RD			5
+#define OFFSET_RD			6
 #define OFFSET_RSA			11
 #define OFFSET_RSB			16
 #define OFFSET_SHFT			21
@@ -125,6 +85,62 @@
 #define OFFSET_FUNCT_B		30
 #define OFFSET_FUNCT_SYS	16
 #define OFFSET_IMM_SYS		24
+
+/* Bit masks for non-shifted bitfields */
+#define MASK_2bit			(unsigned)0x00000003
+#define MASK_3bit			(unsigned)0x00000007
+#define MASK_4bit			(unsigned)0x0000000f
+#define MASK_5bit			(unsigned)0x0000001f
+#define MASK_6bit			(unsigned)0x0000003f
+#define MASK_7bit			(unsigned)0x0000007f
+#define MASK_8bit			(unsigned)0x000000ff
+#define MASK_11bit			(unsigned)0x000007ff
+#define MASK_12bit			(unsigned)0x00000fff
+#define MASK_14bit			(unsigned)0x00003fff
+#define MASK_16bit			(unsigned)0x0000ffff
+#define MASK_21bit			(unsigned)0x001fffff
+
+#define MASK_RD				(MASK_5bit << OFFSET_RD)//0x000003e0
+#define MASK_RSA			(MASK_5bit << OFFSET_RSA)//0x00007c00
+#define MASK_RSB			(MASK_5bit << OFFSET_RSB)//0x0001f000
+#define MASK_SHFT			(MASK_7bit << OFFSET_SHFT)//0x000007f0	
+#define MASK_ALUOP			(MASK_4bit << OFFSET_ALUOP)//0xf0000000
+#define MASK_IMM_I			(MASK_12bit << OFFSET_IMM_I)//0x0fff0000
+#define MASK_IMM_L			(MASK_14bit << OFFSET_IMM_L)//0xfff80000
+#define MASK_FUNCT_L		(MASK_2bit << OFFSET_FUNCT_L)//0x00006000
+#define MASK_DSEL_LI		MASK_RSA
+#define MASK_IMM_LI			(MASK_16bit << OFFSET_IMM_LI)//0xffff0000
+#define MASK_FUNCT_S		MASK_RSB
+#define MASK_IMM_HI_S		(MASK_11bit << OFFSET_IMM_HI_S)//0xfff00000
+#define MASK_IMM_LO_S		(MASK_3bit << OFFSET_IMM_LO_S)//0x00000700
+#define MASK_IMM_S			( MASK_IMM_LO_S | MASK_IMM_HI_S ) //0xfff00700
+#define MASK_IMM_HI_J		MASK_RD//0xffff0000	
+#define MASK_IMM_LO_J		(MASK_16bit << OFFSET_IMM_LO_J)
+#define MASK_IMM_J			( (MASK_IMM_LO_J) | (MASK_IMM_HI_J) )//0xffff03e0
+#define MASK_IMM_HI_B		(MASK_11bit << OFFSET_IMM_HI_B)//0x03fe0000
+#define MASK_IMM_LO_B		MASK_RD
+#define MASK_IMM_B			( MASK_IMM_LO_B | MASK_IMM_HI_B )//0x03fe03e0
+#define MASK_FUNCT_B		( MASK_2bit << OFFSET_FUNCT_B )//0xc0000000
+#define MASK_FUNCT_SYS		( MASK_8bit << OFFSET_FUNCT_SYS)//0x0f000000
+#define MASK_IMM_SYS		( MASK_8bit << OFFSET_IMM_SYS)//0xf0000000
+
+/*Opcode related defines*/
+#define MASK_OPC			MASK_6bit
+#define MASK_R_OPC			OPC_INT
+#define MASK_LI_OPC			OPC_LI
+#define MASK_IMM_OPC		OPC_IMM
+#define MASK_B_OPC			OPC_BRANCH
+#define MASK_JMP_OPC		OPC_JMP
+#define MASK_JLNK_OPC		OPC_JLNK
+#define MASK_RMEM_OPC		OPC_LD
+#define MASK_WMEM_OPC		OPC_ST
+#define MASK_SYS_OPC		OPC_SYS //more system instructions may change this
+#define MASK_MSB_OPC		0x00000011	//31st bit of instruction
+#define MASK_NO_IMM			0x00000000
+
+
+
+
 
 /* Bit field split mask for immediates*/
 #define SPLIT_S_IMM_LO		(MASK_IMM_HI_S >> OFFSET_IMM_HI_S) 
