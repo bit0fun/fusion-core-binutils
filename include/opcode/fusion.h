@@ -105,7 +105,7 @@
 
 /* Bitfield offsets */
 #define OFFSET_OPC			0
-#define OFFSET_RD			6
+#define OFFSET_RD			5
 #define OFFSET_RSA			11
 #define OFFSET_RSB			16
 #define OFFSET_SHFT			21
@@ -189,6 +189,8 @@
 #define OFFSET_IMM_LO_S		5
 #define OFFSET_IMM_HI_B		12
 #define OFFSET_IMM_LO_B		2
+#define OFFSET_IMM_HI_J		5
+#define OFFSET_IMM_LO_J		0
 #define OFFSET_FUNCT_B		0
 #define OFFSET_FUNCT_SYS	8
 #define OFFSET_IMM_SYS		0

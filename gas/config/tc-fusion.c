@@ -1235,6 +1235,7 @@ int parse_rdai( int* rd, int* rsa, int* imm,  char** op_end, expressionS* imm_ex
 	if(**op_end != ','){
 		as_warn(_("expecting comma deliminated operands"));
 	}
+	as_warn(_("Rd: %08x"), (unsigned int)GEN_RD(*rd));
 	(*op_end)++;
 
 	//get rid of spaces and tabs
@@ -1242,6 +1243,7 @@ int parse_rdai( int* rd, int* rsa, int* imm,  char** op_end, expressionS* imm_ex
 		(*op_end)++;
 
 	*rsa = parse_register_operand(op_end);
+	as_warn(_("RSA: %08x"), (unsigned int)GEN_RSA(*rsa));
 	if(**op_end != ','){
 		as_warn(_("expecting comma deliminated operands"));
 	}
@@ -1250,6 +1252,7 @@ int parse_rdai( int* rd, int* rsa, int* imm,  char** op_end, expressionS* imm_ex
 		(*op_end)++;
 
 	parse_imm(imm, op_end, imm_expr, reloc, ip);
+	as_warn(_("IMM: %08x"), (unsigned int)GEN_I_IMM(*rsa));
 	while( (**op_end == ' ') || (**op_end == '\t'))
 		(*op_end)++;
 //	if(**op_end != '\0')
@@ -1868,12 +1871,12 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 #ifdef DEBUG
 		as_warn(_("Const_reloc: %08lx"), (unsigned long int)fusion_apply_const_reloc(fixP->fx_r_type, *valP));
 #endif
-			bfd_putb32( fusion_apply_const_reloc(fixP->fx_r_type, *valP) | bfd_getb32(buf), buf);
+			bfd_putl32( fusion_apply_const_reloc(fixP->fx_r_type, *valP) | bfd_getl32(buf), buf);
 			if(fixP->fx_addsy == NULL)
 				fixP->fx_done = TRUE;
 			break;
 		case BFD_RELOC_FUSION_12:
-			bfd_putb32( (fusion_apply_const_reloc(fixP->fx_r_type, *valP) ) | bfd_getb32(buf), buf);
+			bfd_putl32( (fusion_apply_const_reloc(fixP->fx_r_type, *valP) ) | bfd_getl32(buf), buf);
 			if(fixP->fx_addsy == NULL)
 				fixP->fx_done = TRUE;
 			break;
@@ -1891,7 +1894,7 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 				 if ( ( ( (signed int) delta ) < -8192) || ( ( (signed int) delta ) > 8191)){
 					 as_bad_where(fixP->fx_file, fixP->fx_line,_("too large pc relative branch"));
 				 }
-				 bfd_putb32( bfd_getb32(buf) | GEN_B_IMM(delta), buf);
+				 bfd_putl32( bfd_getl32(buf) | GEN_B_IMM(delta), buf);
 			 }
 			break;
 
@@ -1909,7 +1912,7 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 				if ( ( ( (signed int) delta ) < -1048576) || ( ( (signed int) delta ) > 1048576)) {
 				 	as_bad_where(fixP->fx_file, fixP->fx_line,_("too large pc relative jump"));
 				}
-				bfd_putb32( bfd_getb32(buf) | (GEN_J_IMM(delta)), buf);				
+				bfd_putl32( bfd_getl32(buf) | (GEN_J_IMM(delta)), buf);				
 			}
 			break;
 		case BFD_RELOC_16_PCREL:
@@ -1928,7 +1931,7 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 				 	as_bad_where(fixP->fx_file, fixP->fx_line,_("too large pc relative load. No loading in a white zone"));
 					
 				}
-				bfd_putb32( bfd_getb32(buf) | (GEN_LI_IMM(delta)), buf);				
+				bfd_putl32( bfd_getl32(buf) | (GEN_LI_IMM(delta)), buf);				
 			}
 			break;
 		case BFD_RELOC_FUSION_21:
@@ -1944,12 +1947,12 @@ void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 				if( ((unsigned long) target) > 0x001fffff){
 					as_bad_where(fixP->fx_file, fixP->fx_line,_("too large jump offset"));
 				}
-				bfd_putb32( (bfd_getb32(buf) ) | (GEN_J_IMM(target) ), buf );
+				bfd_putl32( (bfd_getl32(buf) ) | (GEN_J_IMM(target) ), buf );
 			} else {
 #ifdef DEBUG
 				as_warn(_("using constant reloc; jr offset"));
 #endif
-				bfd_putb32( fusion_apply_const_reloc(fixP->fx_r_type, *valP) | bfd_getb32(buf), buf);
+				bfd_putl32( fusion_apply_const_reloc(fixP->fx_r_type, *valP) | bfd_getl32(buf), buf);
 				fixP->fx_done = TRUE;
 			}
 			break;
