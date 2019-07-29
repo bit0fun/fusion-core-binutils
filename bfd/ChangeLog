@@ -1,3 +1,24 @@
+2019-07-29  Martin Liska  <mliska@suse.cz>
+
+	PR 24768
+	* archive.c (_bfd_compute_and_write_armap): Come up with
+	report_plugin_err variable.
+	* bfd-in2.h (struct bfd): Add lto_slim_object flag.
+	* elf.c (struct lto_section): New.
+	(_bfd_elf_make_section_from_shdr): Parse content of
+	.gnu_lto_.lto section.
+	* elflink.c: Report error for a missing LTO plugin.
+	* linker.c (_bfd_generic_link_add_one_symbol): Likewise.
+
+2019-07-28  Alan Modra  <amodra@gmail.com>
+
+	PR 24857
+	PR 24339
+	* elflink.c (elf_link_add_object_symbols): Report an informative
+	error on finding local symbols with index equal or greater than
+	symbol table sh_info.  Correct comment.  Allow such symbols in
+	dynamic objects.  Abort on NULL section for symbol.
+
 2019-07-26  Alan Modra  <amodra@gmail.com>
 
 	* elf-bfd.h (struct output_elf_obj_tdata): Delete "linker" field.

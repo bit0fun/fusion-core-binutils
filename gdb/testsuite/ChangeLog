@@ -1,3 +1,90 @@
+2019-07-29  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
+
+	* gdb.base/options.exp: Update backtrace - completion to
+	new option -frame-info.
+	* gdb.base/frame-args.exp: Test new 'frame-arguments presence'.
+	Test new 'set print frame-info'.  Test backtrace -frame-info
+	overriding 'set print frame-info'.
+	* gdb.python/py-framefilter.exp: Test new 'frame-arguments presence'.
+	Test new 'set print frame-info'.
+	Verify consistency of backtrace with and without filters, with and
+	without -no-filters.
+	* gdb.python/py-framefilter-invalidarg.exp: Update to new print_what
+	default.
+
+2019-07-29  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.linespec/explicit.exp: Fix completion trigger for "complete with
+	no arguments".
+
+2019-07-29  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.linespec/explicit.exp: Fix gdb_test_multiple regexps where second
+	is a substring of the first for "complete non-unique file name".
+
+2019-07-29  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.python/python.exp: Don't terminate gdb_test_multiple regexp
+	with ".*".
+
+2019-07-29  Tom de Vries  <tdevries@suse.de>
+
+	* lib/gdb.exp (skip_libstdcxx_probe_tests_prompt, gdb_is_target_1):
+	Pass prompt_regexp parameter to gdb_test_multiple calls.
+
+2019-07-29  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/maint.exp: Use "\r\n" instead of "\[\r\n\]+" in "maint
+          print registers" regexps.
+
+2019-07-29  Tom de Vries  <tdevries@suse.de>
+
+	* gdb.base/define.exp: Add "\r\n" to "reset gdb_prompt" regexp.
+
+2019-07-29  Tom de Vries  <tdevries@suse.de>
+
+	PR gdb/24855
+	* lib/gdb.exp (gdb_test_multiple): Add prompt_regexp parameter.
+	(skip_python_tests_prompt): Add prompt_regexp argument to
+	gdb_test_multiple calls.
+
+2019-07-27  Tom Tromey  <tom@tromey.com>
+
+	* gdb.tui/main.exp: New file.
+
+2019-07-27  Tom Tromey  <tom@tromey.com>
+
+	* lib/tuiterm.exp (Term::clean_restart): Make "executable"
+	optional.
+	* gdb.tui/empty.exp: New file.
+
+2019-07-27  Tom Tromey  <tom@tromey.com>
+
+	* lib/tuiterm.exp (spawn): New proc.
+	(Term::resize): New proc.
+	* gdb.tui/resize.exp: New file.
+
+2019-07-27  Tom Tromey  <tom@tromey.com>
+
+	* gdb.tui/list.exp: New file.
+
+2019-07-27  Tom Tromey  <tom@tromey.com>
+
+	* gdb.tui/regs.exp: New file.
+
+2019-07-27  Tom Tromey  <tom@tromey.com>
+
+	* gdb.tui/basic.exp: Add "layout split" test.
+
+2019-07-27  Tom Tromey  <tom@tromey.com>
+
+	* gdb.tui/basic.exp: Add "layout asm" test.
+
+2019-07-27  Tom Tromey  <tom@tromey.com>
+
+	* lib/tuiterm.exp: New file.
+	* gdb.tui/basic.exp: New file.
+
 2019-07-27  Kevin Buettner  <kevinb@redhat.com>
 
 	* gdb.dwarf2/dw2-ranges-func.exp (enable_foo_cold_stepping):
