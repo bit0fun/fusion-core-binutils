@@ -146,6 +146,7 @@ TARGET_CPU_CFILES = \
 	config/tc-fr30.c \
 	config/tc-frv.c \
 	config/tc-ft32.c \
+	config/tc-fusion.c \
 	config/tc-h8300.c \
 	config/tc-hppa.c \
 	config/tc-ia64.c \
