@@ -447,6 +447,7 @@ if { ![is_elf_format]
      || [istarget "ia64*-*-*"]
      || [istarget "mcore-*-*"]
      || [istarget "moxie-*-*"]
+	 || [istarget "fusion-*-*"]
 } then {
     unsupported "objump decode line"
 } else {

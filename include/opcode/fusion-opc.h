@@ -1,4 +1,4 @@
-/* Definitions for decoding the moxie opcode table.
+/* Definitions for decoding the Fusion-Core opcode table.
    Copyright (C) 2009-2017 Free Software Foundation, Inc.
    Contributed by Dylan Wadler.
 
@@ -20,6 +20,7 @@
 #ifndef FUSION_ENCODING_H
 #define	FUSION_ENCODING_H
 
+#include "fusion.h"
 
 /* Bitfield Generation Functions */
 
@@ -38,7 +39,7 @@
 #define GET_FUNCT_S(i)		(((MASK_FUNCT_S & i)	>> OFFSET_FUNCT_S ) & 0x3)
 #define GET_IMM_S(i)		(((MASK_IMM_LO_S & i)	>> OFFSET_IMM_LO_S ) | ( (MASK_IMM_HI_S & i) >> OFFSET_IMM_HI_S ))
 #define GET_IMM_J(i)		(((MASK_IMM_LO_J & i)	>> OFFSET_IMM_LO_J ) | ( (MASK_IMM_HI_J & i) >> OFFSET_IMM_HI_J))	
-#define GET_IMM_B(i)		(((MASK_IMM_LO_B & i)	>> SHFT_IMM_LO_B ) | ( (MASK_IMM_HI_B & i) >> SHFT_IMM_HI_B ))
+#define GET_IMM_B(i)		(((MASK_IMM_LO_B & i)	>> OFFSET_IMM_LO_B ) | ( (MASK_IMM_HI_B & i) >> OFFSET_IMM_HI_B ))
 #define GET_FUNCT_B(i)		((MASK_FUNCT_B & i)		>> OFFSET_FUNCT_B)
 #define GET_FUNCT_SYS(i)	((MASK_FUNCT_SYS & i)	>> OFFSET_FUNCT_SYS)
 #define GET_IMM_SYS(i)		((MASK_IMM_SYS & i)		>> OFFSET_IMM_SYS)
@@ -62,7 +63,7 @@
 #define GEN_FUNCT_L(F)		( ( (F) & GET_FUNCT_L(MASK_FUNCT_L) ) << OFFSET_FUNCT_L )
 #define GEN_FUNCT_S(F)		( ( (F) & GET_FUNCT_S(MASK_FUNCT_S) ) << OFFSET_FUNCT_S )
 #define GEN_DSEL_LI(F)		( ( (F) & GET_FUNCT_L(MASK_ALUOP) ) << OFFSET_ALUOP )
-#define GEN_I_IMM(IMM)		( ( (IMM) & GET_IMM_I(MASK_IMM_I) ) << OFFSET_I_IMM )
+#define GEN_I_IMM(IMM)		( ( (IMM) & GET_IMM_I(MASK_IMM_I) ) << OFFSET_IMM_I )
 #define GEN_S_IMM_HI(IMM)	( ( (IMM) & GET_HI_IMM_S(MASK_IMM_S) ) << OFFSET_IMM_HI_S )
 #define GEN_S_IMM_LO(IMM)	( ( (IMM) & GET_LO_IMM_S(MASK_IMM_S) ) << OFFSET_IMM_LO_S )
 #define GEN_S_IMM(IMM)		( GEN_S_IMM_HI(IMM) | GEN_S_IMM_LO(IMM) )
@@ -72,6 +73,8 @@
 #define GEN_B_IMM_HI(IMM)	( ( (IMM) & GET_HI_IMM_S(MASK_IMM_B) ) << OFFSET_IMM_HI_B )
 #define GEN_B_IMM_LO(IMM)   ( ( (IMM) & GET_LO_IMM_S(MASK_IMM_B) ) << OFFSET_IMM_LO_B )
 #define GEN_B_IMM(IMM)		( GEN_B_IMM_HI(IMM) | GEN_B_IMM_LO(IMM) )
+#define GEN_B_FUNCT(F)		( ( (F) & GET_FUNCT_B(MASK_FUNCT_B) ) << OFFSET_FUNCT_B )
+#define GEN_SYS_FUNCT(F)	( ( (F) & GET_FUNCT_SYS(MASK_FUNCT_SYS) ) << OFFSET_FUNCT_SYS )
 #define GEN_SYS_IMM(IMM)	( ( (IMM) & GET_IMM_SYS(MASK_IMM_SYS) ) << OFFSET_IMM_SYS )
 #define GEN_L_IMM(IMM)		( ( (IMM) & GET_IMM_L(MASK_IMM_L) ) << OFFSET_IMM_L )
 #define GEN_LI_IMM(IMM)		( ( (IMM) & GET_IMM_LI(MASK_IMM_LI) ) << OFFSET_IMM_LI )
@@ -89,7 +92,7 @@
 
 #define MAKE_L_TYPE(RD, RSA, FUNCT, IMM) \
 		( GEN_RD( RD ) | GEN_RSA( RSA ) \
-		| GEN_FUNCT_L( FUNCT ) | GEN_IMM_L( IMM ) \
+		| GEN_FUNCT_L( FUNCT ) | GEN_L_IMM( IMM ) \
 		| GEN_OPC( OPC_LD ) )
 
 #define MAKE_LI_TYPE(RD, DSEL, IMM) \
@@ -111,12 +114,12 @@
 
 #define MAKE_B_TYPE( RSA, RSB, IMM, FUNCT) \
 		( GEN_RSA( RSA ) | GEN_RSB( RSB ) \
-		| GEN_B_IMM(IMM) | GEN_FUNCT_B( FUNCT ) \
+		| GEN_B_IMM(IMM) | GEN_B_FUNCT( FUNCT ) \
 		| GEN_OPC( OPC_BRANCH ) )
 
 #define MAKE_SYS_TYPE(RD, RSA, FUNCT, IMM) \
 		( GEN_RD( RD ) | GEN_RSA( RSA ) \
-		| GEN_FUNCT_SYS( FUNCT ) | GEN_SYS_IMM(IMM) \
+		| GEN_SYS_FUNCT( FUNCT ) | GEN_SYS_IMM(IMM) \
 		| GEN_OPC( OPC_SYS ) )
 
 #endif

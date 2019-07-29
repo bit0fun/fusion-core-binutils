@@ -1,4 +1,4 @@
-/* Definitions for decoding the moxie opcode table.
+/* Definitions for decoding the Fusion-Core opcode table.
    Copyright (C) 2009-2017 Free Software Foundation, Inc.
    Contributed by Dylan Wadler.
 
@@ -101,13 +101,7 @@
 #define MASK_MSB_OPC		0x00000011	//31st bit of instruction
 #define MASK_NO_IMM			0x00000000
 
-/* Bit field split mask for immediates*/
-#define SPLIT_S_IMM_LO		(MASK_IMM_HI_S >> OFFSET_IMM_HI_S) 
-#define SPLIT_S_IMM_HI		(MASK_IMM_LO_S >> OFFSET_IMM_LO_S)
-#define SPLIT_J_IMM_LO		(MASK_IMM_HI_J >> OFFSET_IMM_HI_J) 
-#define SPLIT_J_IMM_HI		(MASK_IMM_LO_J >> OFFSET_IMM_LO_J)
-#define SPLIT_B_IMM_LO		(MASK_IMM_HI_B >> OFFSET_IMM_HI_B) 
-#define SPLIT_B_IMM_HI		(MASK_IMM_LO_B >> OFFSET_IMM_LO_B)
+
 
 /* Bitfield offsets */
 #define OFFSET_OPC			0
@@ -124,11 +118,21 @@
 #define OFFSET_FUNCT_S		23
 #define OFFSET_IMM_HI_S		21
 #define OFFSET_IMM_LO_S		8
+#define OFFSET_IMM_HI_J		OFFSET_RD
+#define OFFSET_IMM_LO_J		16
 #define OFFSET_IMM_HI_B		21
 #define OFFSET_IMM_LO_B		6
 #define OFFSET_FUNCT_B		30
 #define OFFSET_FUNCT_SYS	16
 #define OFFSET_IMM_SYS		24
+
+/* Bit field split mask for immediates*/
+#define SPLIT_S_IMM_LO		(MASK_IMM_HI_S >> OFFSET_IMM_HI_S) 
+#define SPLIT_S_IMM_HI		(MASK_IMM_LO_S >> OFFSET_IMM_LO_S)
+#define SPLIT_J_IMM_LO		(MASK_IMM_HI_J >> OFFSET_IMM_HI_J) 
+#define SPLIT_J_IMM_HI		(MASK_IMM_LO_J >> OFFSET_IMM_LO_J)
+#define SPLIT_B_IMM_LO		(MASK_IMM_HI_B >> OFFSET_IMM_HI_B) 
+#define SPLIT_B_IMM_HI		(MASK_IMM_LO_B >> OFFSET_IMM_LO_B)
 
 #else
 /* Big endian definitions */

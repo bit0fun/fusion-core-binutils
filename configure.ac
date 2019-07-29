@@ -1006,6 +1006,10 @@ case "${target}" in
   ft32-*-*)
     noconfigdirs="$noconfigdirs target-rda gprof"
     ;;
+  fusion-*-*)
+	noconfigdirs="$noconfigdirs ${libgcj} gdb sim"
+	noconfigdirs="$noconfigdirs gprof"
+	;;
   moxie-*-*)
     noconfigdirs="$noconfigdirs"
     ;;

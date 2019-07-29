@@ -455,7 +455,7 @@ BFD32_BACKENDS_CFILES = \
 	elf32-fr30.c \
 	elf32-frv.c \
 	elf32-ft32.c \
-	elf32-fusin.c \
+	elf32-fusion.c \
 	elf32-gen.c \
 	elf32-h8300.c \
 	elf32-hppa.c \

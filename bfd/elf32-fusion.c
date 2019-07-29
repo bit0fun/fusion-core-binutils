@@ -293,19 +293,19 @@ static reloc_howto_type* fusion_reloc_name_lookup( bfd *abfd ATTRIBUTE_UNUSED,\
 }
 
 /*set howto pointer for FUSION ELF relocation (?) */
-static void fusion_info_to_howto(bfd *abfd ATTRIBUTE_UNUSED,\
+static bfd_boolean fusion_info_to_howto(bfd *abfd ATTRIBUTE_UNUSED,\
 								arelent *cache_ptr,\
 								Elf_Internal_Rela *dst){
 	unsigned int r_type;
 	r_type = ELF32_R_TYPE(dst->r_info);
 	if(r_type >= (unsigned int) R_FUSION_max){
 			/* xgettext:c-format*/	//what is this for?		
-			_bfd_error_handler(_("%B: invalid Fusion reloc number: %d"), abfd, r_type);
+			_bfd_error_handler(_("Invalid Fusion reloc number: %d"), r_type);
 			r_type = 0;
 		}
 	cache_ptr->howto = &fusion_elf_howto_table[r_type];
 
-
+	return 0;
 }
 
 static bfd_reloc_status_type fusion_final_link_relocate(reloc_howto_type* howto,
@@ -602,8 +602,8 @@ static bfd_boolean fusion_elf_check_relocs(bfd* abfd,
 #define ELF_MACHINE_CODE	EM_FUSION
 #define ELF_MAXPAGESIZE		0x1
 
-#define TARGET_BIG_SYM		fusion_elf32_vec
-#define TARGET_BIG_NAME		"elf32-fusion"
+#define TARGET_LITTLE_SYM		fusion_elf32_vec
+#define TARGET_LITTLE_NAME		"elf32-fusion"
 
 #define elf_info_to_howto_rel				NULL
 #define elf_info_to_howto					fusion_info_to_howto

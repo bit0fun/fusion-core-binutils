@@ -108,6 +108,7 @@
 #include "elf/fr30.h"
 #include "elf/frv.h"
 #include "elf/ft32.h"
+#include "elf/fusion.h"
 #include "elf/h8.h"
 #include "elf/hppa.h"
 #include "elf/i386.h"
@@ -813,6 +814,7 @@ guess_is_rela (unsigned int e_machine)
     case EM_CYGNUS_D30V:
     case EM_FR30:
     case EM_FT32:
+	case EM_FUSION:
     case EM_CYGNUS_FR30:
     case EM_CYGNUS_FRV:
     case EM_H8S:
@@ -1367,7 +1369,9 @@ dump_relocations (Filedata *          filedata,
 	case EM_FT32:
 	  rtype = elf_ft32_reloc_type (type);
 	  break;
-
+	case EM_FUSION:
+	  rtype = elf_fusion_reloc_type (type);
+	  break;
 	case EM_MCORE:
 	  rtype = elf_mcore_reloc_type (type);
 	  break;
@@ -2539,6 +2543,7 @@ get_machine_name (unsigned e_machine)
     case EM_S12Z:               return "Freescale S12Z";
     case EM_CSKY:		return "C-SKY";
 
+	case EM_FUSION:		return "Fusion-Core";
     default:
       snprintf (buff, sizeof (buff), _("<unknown>: 0x%x"), e_machine);
       return buff;
@@ -12550,6 +12555,8 @@ is_32bit_abs_reloc (Filedata * filedata, unsigned int reloc_type)
       return reloc_type == 3; /* R_FR30_32.  */
     case EM_FT32:
       return reloc_type == 1; /* R_FT32_32.  */
+	case EM_FUSION:
+	  return reloc_type == 1; /* R_FUSION*/
     case EM_H8S:
     case EM_H8_300:
     case EM_H8_300H:
@@ -13127,6 +13134,7 @@ is_none_reloc (Filedata * filedata, unsigned int reloc_type)
     case EM_C166:    /* R_XC16X_NONE.  */
     case EM_CRIS:    /* R_CRIS_NONE.  */
     case EM_FT32:    /* R_FT32_NONE.  */
+	case EM_FUSION:  /* R_FUSION_NONE. */
     case EM_IA_64:   /* R_IA64_NONE.  */
     case EM_K1OM:    /* R_X86_64_NONE.  */
     case EM_L1OM:    /* R_X86_64_NONE.  */

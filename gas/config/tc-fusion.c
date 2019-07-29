@@ -103,13 +103,14 @@ struct fusion_set_options{
 	int cpen;			/* Disable coprocessor instructions, only ucode*/
 };
 
+#if 0
 static struct fusion_set_options fusion_opts = {
 	0,	/* pic   */
 	0,	/* endian */
 	0,	/* gen_ucode */
 	1,	/* cpen */
 };
-
+#endif
 static struct hash_control *op_hash_ctrl;
 
 const pseudo_typeS md_pseudo_table[] = {
@@ -334,13 +335,14 @@ static void hash_reg_names(enum reg_file regf, const char* const names[], unsign
 	}
 
 }
-
+/*
 static unsigned int reg_lookup_internal(char* s, enum reg_file regf){
 	struct regname* r = (struct regname*) hash_find(reg_names_hash, s);
 	if( r == NULL || DECODE_REG_FILE(r) != regf)
 		return -1;
 	return DECODE_REG_NUM(r);
 }
+*/
 /*
 static int reg_lookup(char** sptr, enum reg_file regf){
 	char* s = *sptr;	
@@ -1833,6 +1835,7 @@ void md_show_usage(FILE* stream ATTRIBUTE_UNUSED){
 }
 
 /* Debug information additions */
+#if 0
 void fusion_cfi_frame_initial_instructions(void){
 	cfi_add_CFA_def_cfa_register (X_SP);
 }
@@ -1851,6 +1854,7 @@ int tc_fusion_regname_to_dw2regnum( char *regname){
 
 }
 
+#endif
 void md_apply_fix(fixS *fixP, valueT* valP, segT seg ATTRIBUTE_UNUSED){
 	bfd_byte *buf =(bfd_byte*)( fixP->fx_where + fixP->fx_frag->fr_literal );
 	fixP->fx_addnumber = *valP;

@@ -25,6 +25,7 @@
 #define DEFINE_TABLE
 
 #include "opcode/fusion.h"
+#include "opcode/fusion-opc.h"
 #include "disassemble.h"
 #include "opintl.h"
 #include "elf-bfd.h"
@@ -49,6 +50,9 @@ extern const char* fusion_spreg_name[13];
 
 int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 
+	/* Make sure little endian */
+	info->endian_code = BFD_ENDIAN_LITTLE;
+	info->display_endian = info->endian_code;
 
 	int status;
 	stream = info->stream;
@@ -78,7 +82,7 @@ int print_insn_fusion (bfd_vma addr, struct disassemble_info *info) {
 		fpr(stream, "%s\t%s,\t%s,\t%s", insn->name,\
 						fusion_gpreg_name[ GET_RD(insn_word) ],\
 						fusion_gpreg_name[ GET_RSA(insn_word) ], \
-						fusion_gpreg_name[GET_RSB(insn_word)] );
+						fusion_gpreg_name[ GET_RSB(insn_word)] );
 	} else if( IS_I_TYPE(insn_word) ) { //need to get alu op to determine instruction
 		insn = &fusion_insn_I[ GET_ALUOP(insn_word) ];
 		insn_t aluop = insn->index;

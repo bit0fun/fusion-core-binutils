@@ -534,7 +534,7 @@ disassembler (enum bfd_architecture a,
       disassemble = print_insn_frv;
       break;
 #endif
-#ifdef ARCH_FUSION
+#ifdef ARCH_fusion
 	case bfd_arch_fusion:
 	  disassemble = print_insn_fusion;
 	  break;

@@ -313,6 +313,9 @@ case $1 in
 				basic_machine=m68k-ericsson
 				os=ose
 				;;
+			fusion)
+				basic_machine=fusion-elf
+				;;
 			gmicro)
 				basic_machine=tron-gmicro
 				os=sysv

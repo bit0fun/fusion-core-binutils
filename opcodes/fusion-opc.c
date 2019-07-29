@@ -1,4 +1,4 @@
-/* fusion-opc.c -- Definitions for moxie opcodes.
+/* fusion-opc.c -- Definitions for Fusion-Core opcodes.
    Copyright (C) 2009-2017 Free Software Foundation, Inc.
    Contributed by Dylan Wadler
 

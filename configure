@@ -3712,6 +3712,7 @@ case "${target}" in
   fusion-*-*)
 	noconfigdirs="$noconfigdirs ${libgcj} gdb sim"
 	noconfigdirs="$noconfigdirs gprof"
+	;;
   moxie-*-*)
     noconfigdirs="$noconfigdirs"
     ;;

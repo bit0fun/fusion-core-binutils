@@ -19,10 +19,13 @@
    Foundation, 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.  */
 
 #include "opcode/fusion.h"
+#include "opcode/fusion-opc.h"
  
 
 #define TC_FUSION 1
+#ifndef TARGET_BYTES_BIG_ENDIAN
 #define TARGET_BYTES_BIG_ENDIAN 0
+#endif
 #define WORKING_DOT_WORD
 
 #define TARGET_FORMAT "elf32-fusion"
@@ -31,7 +34,7 @@
 #define md_undefined_symbol(NAME)	0
 
 
-/* These macros must be defined, but is will be a fatal assembler
+/* These macros must be defined, but it will be a fatal assembler
    error if we ever hit them.  */
 #define md_estimate_size_before_relax(A, B) (as_fatal (_("estimate size\n")), 0)
 #define md_convert_frag(B, S, F)            as_fatal (_("convert_frag\n"))
@@ -48,7 +51,7 @@ extern void fusion_pop_insert(void);
 
 #define md_section_align(SEGMENT, SIZE) (SIZE)
 
-
+#if 0
 
 /* Debug information generation related options */
 #define TARGET_USE_CFIPOP 1
@@ -67,3 +70,5 @@ extern int tc_fusion_regname_to_dw2regnum (char *);
 
 /* Adjust debug line number after relaxation. May not be used right now? */
 #define DWARF2_USE_FIXED_ADVANCE_PC 1
+
+#endif
