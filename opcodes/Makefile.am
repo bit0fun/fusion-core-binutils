@@ -140,6 +140,8 @@ TARGET_LIBOPCODES_CFILES = \
 	frv-opc.c \
 	ft32-dis.c \
 	ft32-opc.c \
+	fusion-dis.c \
+	fusion-opc.c \
 	h8300-dis.c \
 	hppa-dis.c \
 	i386-dis.c \

@@ -42,6 +42,7 @@
 #define ARCH_fr30
 #define ARCH_frv
 #define ARCH_ft32
+#define ARCH_fusion
 #define ARCH_h8300
 #define ARCH_hppa
 #define ARCH_i386
@@ -532,6 +533,11 @@ disassembler (enum bfd_architecture a,
     case bfd_arch_frv:
       disassemble = print_insn_frv;
       break;
+#endif
+#ifdef ARCH_FUSION
+	case bfd_arch_fusion:
+	  disassemble = print_insn_fusion;
+	  break;
 #endif
 #ifdef ARCH_moxie
     case bfd_arch_moxie:
